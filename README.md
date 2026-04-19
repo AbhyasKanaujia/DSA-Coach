@@ -1,92 +1,61 @@
-# DSA Flashcard Backend
+# DSA Coach
 
-A spaced repetition flashcard backend for DSA interview prep with MongoDB + Express.
+Master data structures and algorithms through intelligent spaced repetition. Build lasting interview readiness with a system that adapts to your learning pace.
 
-## Architecture
+## What is DSA Coach?
 
-```
-src/
-├── config/          # DB, env, constants
-├── middleware/      # auth, logging, error handling
-├── models/          # Mongoose schemas
-├── repositories/    # Data access layer
-├── services/        # Business logic + SR algorithm
-├── controllers/     # Request/response handling
-├── routes/          # Endpoint definitions
-└── app.js           # Express setup
-```
+DSA Coach is a flashcard application designed specifically for DSA interview preparation. Unlike traditional flashcard apps, it uses the SM-2 spaced repetition algorithm to optimize your review schedule, ensuring you spend time on problems that need it most.
 
-## Setup
+**Key Features:**
+
+- 🧠 **Spaced Repetition** - SM-2 algorithm schedules reviews at optimal intervals
+- 📊 **Progressive Disclosure** - Reveal solutions step-by-step (intuition → approach → code → complexity)
+- 🎯 **Focused Learning** - Track mastery by category and difficulty
+- ⌨️ **Keyboard-First** - Efficient review sessions with shortcuts
+- 🌙 **Terminal-Inspired UI** - Clean, distraction-free interface
+
+## Quick Start
 
 ```bash
+# Install dependencies
 npm install
-```
 
-## Run
-
-```bash
-npm start
-# or
+# Start both backend and frontend
 npm run dev
 ```
 
-## API Endpoints
+Visit `http://localhost:5173` to get started.
 
-### Auth
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get token
-- `GET /api/auth/profile` - Get current user profile
-- `PUT /api/auth/profile` - Update profile
-- `GET /api/auth/stats` - Get user stats
+## How It Works
 
-### Cards
-- `POST /api/cards` - Create card
-- `GET /api/cards` - List cards (filter by category, difficulty, tags)
-- `GET /api/cards/:cardId` - Get card
-- `PUT /api/cards/:cardId` - Update card
-- `DELETE /api/cards/:cardId` - Delete card
-- `POST /api/cards/:cardId/solutions` - Add solution
-- `PUT /api/cards/:cardId/solutions/:solutionIndex` - Update solution
+1. **Create Cards** - Add problems with multiple solution approaches
+2. **Review Daily** - The system shows you cards due for review
+3. **Rate Your Recall** - Easy/Medium/Hard ratings adjust future scheduling
+4. **Track Progress** - See your mastery grow over time
 
-### Sessions
-- `GET /api/sessions` - Get due cards for session
-- `POST /api/sessions/review` - Submit review (easy/medium/hard)
+## Development
 
-## Card Model
+```bash
+# Backend only
+npm run server
 
-```javascript
-{
-  userId: ObjectId,
-  questionName: String,
-  category: String,
-  difficulty: "easy" | "medium" | "hard",
-  tags: [String],
-  solutions: [{
-    name: String,
-    approachOrder: Number,
-    intuition: String,
-    steps: [String],
-    code: { language: String, snippet: String },
-    timeComplexity: String,
-    spaceComplexity: String
-  }],
-  selectedSolutionIndex: Number,
-  revisionNotes: String,
-  easeFactor: Number,
-  interval: Number,
-  repetition: Number,
-  dueDate: Date,
-  lastReviewed: Date,
-  lastQuality: Number,
-  lapseCount: Number
-}
+# Frontend only
+npm run frontend
+
+# Both together
+npm run dev
+
+# Run tests
+npm test
 ```
 
-## Spaced Repetition
+## Tech Stack
 
-Uses SM-2 algorithm:
-- easy → quality 5
-- medium → quality 3
-- hard → quality 1
+- **Backend:** Node.js, Express, MongoDB
+- **Frontend:** React, Vite, Tailwind CSS
+- **Auth:** JWT with bcrypt
+- **Algorithm:** SM-2 Spaced Repetition
 
-Quality < 3 resets repetition and interval.
+## License
+
+ISC
