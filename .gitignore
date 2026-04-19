@@ -5,3 +5,13 @@ dist/
 .DS_Store
 .claude/
 coverage/
+
+# Frontend
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Large docs
+docs/design-inspirations/
