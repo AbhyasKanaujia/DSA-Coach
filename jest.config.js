@@ -1,16 +1,15 @@
 module.exports = {
-  testEnvironment: 'node',
-  testMatch: ['**/*.test.js'],
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/app.js',
-    '!**/node_modules/**'
+  projects: [
+    {
+      displayName: 'backend',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/tests/**/*.test.js'],
+      setupFilesAfterEnv: ['<rootDir>/tests/setup/testDb.js'],
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
+    },
+    '<rootDir>/frontend/jest.config.cjs',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  testTimeout: 10000,
-  setupFilesAfterEnv: ['<rootDir>/tests/setup/testDb.js'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
-  }
 };

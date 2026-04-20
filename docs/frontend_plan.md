@@ -485,3 +485,76 @@ const T = {
 
 - **Code/Mono:** JetBrains Mono
 - **UI/Sans:** Inter
+
+## Testing Strategy
+
+Mirror the backend's philosophy: unit tests are fast and isolated, integration tests exercise real behavior against a mocked network, e2e (optional) covers the full journey across frontend + backend.
+
+### Structure
+
+```
+frontend/
+├── src/
+└── tests/
+    ├── unit/          # components render, user interactions
+    ├── integration/   # full flows with MSW-mocked API
+    └── setup/         # jest-dom, MSW server, handlers
+```
+
+### Tooling
+
+- **Runner:** Jest + `jest-environment-jsdom`
+- **Component testing:** React Testing Library + `@testing-library/user-event`
+- **Assertions:** `@testing-library/jest-dom`
+- **Network mock:** Mock Service Worker (MSW) — intercepts `fetch`/`axios` at the network layer so components hit "real" endpoints without a live backend
+- **Transforms:** `babel-jest` with `@babel/preset-env` + `@babel/preset-react` (Jest does not consume Vite's transform pipeline)
+
+### Rules
+
+- **Test flows, not internals.** No assertions on state, props, or implementation details. Query by accessible role/text the user would see.
+- **Unit = fast + isolated.** One component or hook. Stub context only when the component depends on it.
+- **Integration = real behavior.** Render the page under `MemoryRouter` with the real `AuthContext` and real axios client. Swap only the network via MSW handlers.
+- **No snapshot tests** for UI correctness — they rot and assert nothing meaningful. Prefer explicit role/text queries.
+- **One test, one user story.** Avoid assertion soup.
+
+### Example Integration: Review Flow
+
+```
+Visit /review
+  → card loads (GET /api/sessions mocked)
+  → click "Reveal Intuition" → intuition text visible
+  → click "Reveal Steps" → steps visible
+  → click "Reveal Code" → code visible
+  → click "Easy" → POST /api/sessions/review called with rating
+  → next card renders
+  → last card rated → "Done for today" visible
+```
+
+This single test covers the core product. If it passes, the product works.
+
+### Per-Phase Test Coverage
+
+Each phase ships with tests before it is marked complete:
+
+- **Phase 1 (Review):** unit tests for `RevealLayer` (progressive disclosure), `RatePanel` (button click fires callback with correct rating). Integration test for the full review flow above.
+- **Phase 2 (Add Card):** unit tests for `SolutionForm`, `StepsInput` (add/remove rows). Integration test: fill form → submit → POST /api/cards called with correct payload → redirect.
+- **Phase 3 (Library):** unit tests for `FilterBar`, `CardRow`. Integration test: list renders → filter by category → filtered results shown.
+- **Phase 4 (Refinements):** keyboard shortcut tests (press `1` → Hard rating fired). Exit-session confirmation test.
+- **Phase 5 (Dashboard):** integration test: dashboard loads stats → click "Start Review" → navigates to `/review`.
+- **Phase 6 (Polish):** accessibility checks (focus order, ARIA roles) via RTL queries.
+
+### Scripts
+
+```json
+{
+  "test": "jest",
+  "test:unit": "jest tests/unit",
+  "test:integration": "jest tests/integration",
+  "test:watch": "jest --watch",
+  "test:coverage": "jest --coverage"
+}
+```
+
+### E2E (Optional, Post-V1)
+
+Playwright against the real backend + real frontend, seeded DB. Covers one happy path per core flow. Do not write e2e for edge cases — those belong in integration.
