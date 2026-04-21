@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Review from './pages/Review';
 import Library from './pages/Library';
@@ -63,7 +64,9 @@ function AppRoutes() {
           path="/"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Layout>
+                <Dashboard />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -71,7 +74,9 @@ function AppRoutes() {
           path="/review"
           element={
             <ProtectedRoute>
-              <Review />
+              <Layout>
+                <Review />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -79,7 +84,9 @@ function AppRoutes() {
           path="/cards"
           element={
             <ProtectedRoute>
-              <Library />
+              <Layout>
+                <Library />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -87,7 +94,9 @@ function AppRoutes() {
           path="/cards/new"
           element={
             <ProtectedRoute>
-              <AddCard />
+              <Layout>
+                <AddCard />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -95,7 +104,9 @@ function AppRoutes() {
           path="/stats"
           element={
             <ProtectedRoute>
-              <Stats />
+              <Layout>
+                <Stats />
+              </Layout>
             </ProtectedRoute>
           }
         />

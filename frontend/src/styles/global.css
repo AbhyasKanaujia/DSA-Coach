@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bg: oklch(0.14 0 256.58);
+  --color-bgLift: oklch(0.17 0.01 240);
+  --color-bgCard: oklch(0.19 0.01 240);
+  --color-bgInset: oklch(0.12 0.01 240);
+  --color-border: oklch(0.28 0.01 240);
+  --color-borderLt: oklch(0.24 0.01 240);
+  --color-text: oklch(0.94 0.005 85);
+  --color-textDim: oklch(0.64 0.01 240);
+  --color-textMuted: oklch(0.46 0.01 240);
+  --color-accent: oklch(0.78 0.13 145);
+  --color-warn: oklch(0.78 0.13 75);
+  --color-danger: oklch(0.72 0.15 25);
+  --color-info: oklch(0.78 0.13 230);
+
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -45,9 +64,11 @@ input:focus, textarea:focus, select:focus {
   border-color: oklch(0.78 0.13 145);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 /* scrollbar */
@@ -203,4 +224,50 @@ a {
   .main {
     padding-bottom: 72px !important;
   }
+}
+
+/* Sidebar specific styles */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.28 0.01 240) oklch(0.14 0.01 240);
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: oklch(0.14 0.01 240);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: oklch(0.28 0.01 240);
+  border-radius: 0;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.46 0.01 240);
+}
+
+/* Mobile drawer specific styles */
+.mobnav {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.28 0.01 240) oklch(0.19 0.01 240);
+}
+
+.mobnav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobnav::-webkit-scrollbar-track {
+  background: oklch(0.19 0.01 240);
+}
+
+.mobnav::-webkit-scrollbar-thumb {
+  background: oklch(0.28 0.01 240);
+  border-radius: 0;
+}
+
+.mobnav::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.46 0.01 240);
 }

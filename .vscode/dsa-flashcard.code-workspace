@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "frontend"
+    }
+  ],
+  "settings": {
+    "jest.jestCommandLine": "npm test --",
+    "jest.runMode": "on-demand"
+  }
+}
