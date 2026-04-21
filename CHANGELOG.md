@@ -13,11 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mobile drawer navigation with bottom sheet style
 - Layout component for consistent page structure
 - Lucide React icons for consistent cross-platform rendering
+- `Settings` placeholder page at `/settings` showing user preferences
+- Terminal-style breadcrumbs in the header (`~/dsa_coach/…`), rendered on mobile and desktop
+- Real streak from `user.stats.streak`; active state derived from `lastActiveDate`
+- Real user info (name, avatar initial) in the header avatar menu
 
 ### Changed
 
 - Updated app name to "~/dsa_coach" with accent color on "~/"
 - Mobile bottom bar with hamburger menu icon
+- Unified `Sidebar` for mobile and desktop via responsive Tailwind;
+- `AuthController.getProfile` returns the full sanitized user (matches login response)
+
+### Fixed
+
+- Base-element CSS moved into `@layer base` so Tailwind utilities win on `<button>`
 
 ## [0.0.0] - Initial Release
 

@@ -6,6 +6,8 @@ import Review from './pages/Review';
 import Library from './pages/Library';
 import AddCard from './pages/AddCard';
 import Stats from './pages/Stats';
+import Problems from './pages/Problems';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -101,11 +103,31 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/problems"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Problems />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/stats"
           element={
             <ProtectedRoute>
               <Layout>
                 <Stats />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
               </Layout>
             </ProtectedRoute>
           }

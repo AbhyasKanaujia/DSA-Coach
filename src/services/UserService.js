@@ -114,6 +114,14 @@ class UserService {
     return user.stats;
   }
 
+  async getUserById(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return this.sanitizeUser(user);
+  }
+
   sanitizeUser(user) {
     const { passwordHash, ...sanitized } = user.toObject();
     return sanitized;

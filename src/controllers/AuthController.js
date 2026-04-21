@@ -33,8 +33,8 @@ class AuthController {
 
   async getProfile(req, res, next) {
     try {
-      const user = await userService.getUserStats(req.userId);
-      res.json({ userId: req.userId, email: req.email, stats: user });
+      const user = await userService.getUserById(req.userId);
+      res.json(user);
     } catch (error) {
       next(error);
     }
