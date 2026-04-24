@@ -2,14 +2,23 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/UserRepository');
 const { AUTH } = require('../config/constants');
+const {
+  validateUserCreation,
+  validateUserUpdate,
+  validators,
+  AuthenticationError,
+  NotFoundError,
+  ConflictError
+} = require('../utils/validators');
 
 class UserService {
   async createUser(data) {
-    const { email, password, name } = data;
+    const validated = validateUserCreation(data);
+    const { email, password, name } = validated;
 
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
-      throw new Error('Email already registered');
+      throw new ConflictError('Email already registered');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -20,8 +29,7 @@ class UserService {
       name,
       preferences: {
         dailyGoal: 20,
-        maxSessionSize: 10,
-        preferredCategories: []
+        maxSessionSize: 10
       },
       stats: {
         totalReviews: 0,
@@ -37,16 +45,16 @@ class UserService {
   async authenticate(email, password) {
     const user = await userRepository.findByEmail(email);
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new AuthenticationError('Invalid credentials');
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw new AuthenticationError('Invalid credentials');
     }
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id.toString() },
       process.env.JWT_SECRET,
       { expiresIn: AUTH.JWT_EXPIRES_IN }
     );
@@ -54,70 +62,66 @@ class UserService {
     return { token, user: this.sanitizeUser(user) };
   }
 
-  async updateUser(userId, updates) {
-    const allowedFields = ['name', 'avatarUrl', 'preferences'];
-    const filteredUpdates = {};
+  async updateProfile(userId, updates) {
+    const validated = validateUserUpdate(updates);
 
-    for (const field of allowedFields) {
-      if (updates[field] !== undefined) {
-        filteredUpdates[field] = updates[field];
-      }
-    }
-
-    const user = await userRepository.update(userId, filteredUpdates);
-    return this.sanitizeUser(user);
-  }
-
-  async updateStatsOnReview(userId) {
     const user = await userRepository.findById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User');
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const finalUpdates = { ...validated };
 
-    const lastActive = user.stats.lastActiveDate
-      ? new Date(user.stats.lastActiveDate)
-      : null;
-    lastActive?.setHours(0, 0, 0, 0);
-
-    let streakIncrement = 0;
-
-    if (!lastActive) {
-      streakIncrement = 1;
-    } else {
-      const diffDays = Math.floor((today - lastActive) / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) {
-        streakIncrement = 0;
-      } else if (diffDays === 1) {
-        streakIncrement = 1;
-      } else {
-        streakIncrement = 1;
-      }
+    if (validated.preferences) {
+      finalUpdates.preferences = this.mergePreferences(user.preferences, validated.preferences);
     }
 
-    const updatedUser = await userRepository.incrementStats(userId, {
-      totalReviews: 1,
-      streak: streakIncrement,
-      lastActiveDate: new Date()
+    const updatedUser = await userRepository.update(userId, finalUpdates);
+    return this.sanitizeUser(updatedUser);
+  }
+
+  async updatePreferences(userId, preferences) {
+    const validated = validators.preferences(preferences);
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    const mergedPreferences = this.mergePreferences(user.preferences, validated);
+    const updatedUser = await userRepository.update(userId, { preferences: mergedPreferences });
+    return this.sanitizeUser(updatedUser);
+  }
+
+  async updateLastActive(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    const updatedUser = await userRepository.update(userId, {
+      'stats.lastActiveDate': new Date()
     });
-
-    return updatedUser.stats;
+    return this.sanitizeUser(updatedUser);
   }
 
-  async getUserStats(userId) {
-    const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    return user.stats;
+  mergePreferences(existingPreferences, newPreferences) {
+    const defaultPreferences = {
+      dailyGoal: 20,
+      maxSessionSize: 10
+    };
+
+    return {
+      ...defaultPreferences,
+      ...existingPreferences,
+      ...newPreferences
+    };
   }
 
   async getUserById(userId) {
     const user = await userRepository.findById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User');
     }
     return this.sanitizeUser(user);
   }

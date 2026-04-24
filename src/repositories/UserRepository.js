@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const DateUtils = require('../utils/dateUtils');
 
 class UserRepository {
   async create(userData) {
@@ -35,6 +36,33 @@ class UserRepository {
     return await User.findByIdAndUpdate(
       userId,
       updateOps,
+      { new: true }
+    );
+  }
+
+  async incrementTotalReviews(userId) {
+    return await User.findByIdAndUpdate(
+      userId,
+      { $inc: { 'stats.totalReviews': 1 } },
+      { new: true }
+    );
+  }
+
+  async updateStreak(userId, streakIncrement) {
+    return await User.findByIdAndUpdate(
+      userId,
+      { $inc: { 'stats.streak': streakIncrement }, $set: { 'stats.lastActiveDate': DateUtils.nowUTCMidnight() } },
+      { new: true }
+    );
+  }
+
+  async incrementReviewAndUpdateStreak(userId, streakIncrement) {
+    return await User.findByIdAndUpdate(
+      userId,
+      {
+        $inc: { 'stats.totalReviews': 1, 'stats.streak': streakIncrement },
+        $set: { 'stats.lastActiveDate': DateUtils.nowUTCMidnight() }
+      },
       { new: true }
     );
   }

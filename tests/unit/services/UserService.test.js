@@ -45,7 +45,7 @@ describe('UserService', () => {
       userRepository.findByEmail.mockResolvedValue({ _id: 'existing123' });
 
       await expect(
-        userService.createUser({ email: 'test@example.com', password: 'password123' })
+        userService.createUser({ email: 'test@example.com', password: 'password123', name: 'Test User' })
       ).rejects.toThrow('Email already registered');
     });
 
@@ -57,13 +57,12 @@ describe('UserService', () => {
         toObject: () => ({ _id: 'user123' })
       });
 
-      await userService.createUser({ email: 'test@example.com', password: 'password123' });
+      await userService.createUser({ email: 'test@example.com', password: 'password123', name: 'Test User' });
 
       const createCall = userRepository.create.mock.calls[0][0];
       expect(createCall.preferences).toEqual({
         dailyGoal: 20,
-        maxSessionSize: 10,
-        preferredCategories: []
+        maxSessionSize: 10
       });
     });
 
@@ -75,7 +74,7 @@ describe('UserService', () => {
         toObject: () => ({ _id: 'user123' })
       });
 
-      await userService.createUser({ email: 'test@example.com', password: 'password123' });
+      await userService.createUser({ email: 'test@example.com', password: 'password123', name: 'Test User' });
 
       const createCall = userRepository.create.mock.calls[0][0];
       expect(createCall.stats).toEqual({
@@ -102,7 +101,7 @@ describe('UserService', () => {
 
       expect(bcrypt.compare).toHaveBeenCalledWith('password123', 'hashedPassword');
       expect(jwt.sign).toHaveBeenCalledWith(
-        { userId: 'user123', email: 'test@example.com' },
+        { userId: 'user123' },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -131,18 +130,19 @@ describe('UserService', () => {
     });
   });
 
-  describe('updateUser', () => {
-    it('should update allowed fields only', async () => {
+  describe('updateProfile', () => {
+    it('should update profile fields', async () => {
       const mockUser = {
         _id: 'user123',
         name: 'Updated Name',
-        toObject: () => ({ _id: 'user123', name: 'Updated Name' })
+        preferences: { dailyGoal: 20, maxSessionSize: 10 },
+        toObject: () => ({ _id: 'user123', name: 'Updated Name', preferences: { dailyGoal: 20, maxSessionSize: 10 } })
       };
+      userRepository.findById.mockResolvedValue(mockUser);
       userRepository.update.mockResolvedValue(mockUser);
 
-      const result = await userService.updateUser('user123', {
-        name: 'Updated Name',
-        passwordHash: 'shouldNotUpdate'
+      const result = await userService.updateProfile('user123', {
+        name: 'Updated Name'
       });
 
       expect(userRepository.update).toHaveBeenCalledWith(
@@ -151,109 +151,96 @@ describe('UserService', () => {
           name: 'Updated Name'
         })
       );
-      expect(userRepository.update).not.toHaveBeenCalledWith(
+      expect(result).toEqual({ _id: 'user123', name: 'Updated Name', preferences: { dailyGoal: 20, maxSessionSize: 10 } });
+    });
+
+    it('should merge preferences when updating profile', async () => {
+      const mockUser = {
+        _id: 'user123',
+        preferences: { dailyGoal: 20, maxSessionSize: 10 },
+        toObject: () => ({ _id: 'user123', preferences: { dailyGoal: 30, maxSessionSize: 10 } })
+      };
+      userRepository.findById.mockResolvedValue(mockUser);
+      userRepository.update.mockResolvedValue(mockUser);
+
+      await userService.updateProfile('user123', {
+        preferences: { dailyGoal: 30 }
+      });
+
+      expect(userRepository.update).toHaveBeenCalledWith(
         'user123',
         expect.objectContaining({
-          passwordHash: 'shouldNotUpdate'
+          preferences: { dailyGoal: 30, maxSessionSize: 10 }
         })
       );
     });
   });
 
-  describe('updateStatsOnReview', () => {
-    it('should increment totalReviews', async () => {
+  describe('updatePreferences', () => {
+    it('should update preferences only', async () => {
       const mockUser = {
         _id: 'user123',
-        stats: { totalReviews: 5, streak: 3, lastActiveDate: new Date() }
+        preferences: { dailyGoal: 20, maxSessionSize: 10 },
+        toObject: () => ({ _id: 'user123', preferences: { dailyGoal: 30, maxSessionSize: 10 } })
       };
       userRepository.findById.mockResolvedValue(mockUser);
-      userRepository.incrementStats.mockResolvedValue({
-        _id: 'user123',
-        stats: { totalReviews: 6, streak: 4, lastActiveDate: new Date() }
+      userRepository.update.mockResolvedValue(mockUser);
+
+      const result = await userService.updatePreferences('user123', {
+        dailyGoal: 30
       });
 
-      await userService.updateStatsOnReview('user123');
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'user123',
+        { preferences: { dailyGoal: 30, maxSessionSize: 10 } }
+      );
+      expect(result).toEqual({ _id: 'user123', preferences: { dailyGoal: 30, maxSessionSize: 10 } });
+    });
 
-      expect(userRepository.incrementStats).toHaveBeenCalledWith('user123', {
-        totalReviews: 1,
-        streak: expect.any(Number),
-        lastActiveDate: expect.any(Date)
+    it('should merge with existing preferences', async () => {
+      const mockUser = {
+        _id: 'user123',
+        preferences: { dailyGoal: 20, maxSessionSize: 10 },
+        toObject: () => ({ _id: 'user123', preferences: { dailyGoal: 20, maxSessionSize: 15 } })
+      };
+      userRepository.findById.mockResolvedValue(mockUser);
+      userRepository.update.mockResolvedValue(mockUser);
+
+      await userService.updatePreferences('user123', {
+        maxSessionSize: 15
       });
-    });
 
-    it('should increment streak for consecutive days', async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const mockUser = {
-        _id: 'user123',
-        stats: { totalReviews: 5, streak: 3, lastActiveDate: yesterday }
-      };
-      userRepository.findById.mockResolvedValue(mockUser);
-      userRepository.incrementStats.mockResolvedValue({ _id: 'user123', stats: { totalReviews: 6, streak: 4 } });
-
-      await userService.updateStatsOnReview('user123');
-
-      const incrementCall = userRepository.incrementStats.mock.calls[0][1];
-      expect(incrementCall.streak).toBe(1);
-    });
-
-    it('should not increment streak for same day', async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const mockUser = {
-        _id: 'user123',
-        stats: { totalReviews: 5, streak: 3, lastActiveDate: today }
-      };
-      userRepository.findById.mockResolvedValue(mockUser);
-      userRepository.incrementStats.mockResolvedValue({ _id: 'user123', stats: { totalReviews: 6, streak: 3 } });
-
-      await userService.updateStatsOnReview('user123');
-
-      const incrementCall = userRepository.incrementStats.mock.calls[0][1];
-      expect(incrementCall.streak).toBe(0);
-    });
-
-    it('should reset streak for gap > 1 day', async () => {
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-      const mockUser = {
-        _id: 'user123',
-        stats: { totalReviews: 5, streak: 10, lastActiveDate: twoDaysAgo }
-      };
-      userRepository.findById.mockResolvedValue(mockUser);
-      userRepository.incrementStats.mockResolvedValue({ _id: 'user123', stats: { totalReviews: 6, streak: 1 } });
-
-      await userService.updateStatsOnReview('user123');
-
-      const incrementCall = userRepository.incrementStats.mock.calls[0][1];
-      expect(incrementCall.streak).toBe(1);
-    });
-
-    it('should throw error if user not found', async () => {
-      userRepository.findById.mockResolvedValue(null);
-
-      await expect(userService.updateStatsOnReview('user123')).rejects.toThrow('User not found');
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'user123',
+        { preferences: { dailyGoal: 20, maxSessionSize: 15 } }
+      );
     });
   });
 
-  describe('getUserStats', () => {
-    it('should return user stats', async () => {
-      const mockStats = { totalReviews: 10, streak: 5, lastActiveDate: new Date() };
-      const mockUser = { _id: 'user123', stats: mockStats };
+  describe('updateLastActive', () => {
+    it('should update lastActiveDate', async () => {
+      const updatedDate = new Date();
+      const mockUser = {
+        _id: 'user123',
+        stats: { totalReviews: 5, streak: 3, lastActiveDate: updatedDate },
+        toObject: () => ({ _id: 'user123', stats: { totalReviews: 5, streak: 3, lastActiveDate: updatedDate } })
+      };
       userRepository.findById.mockResolvedValue(mockUser);
+      userRepository.update.mockResolvedValue(mockUser);
 
-      const result = await userService.getUserStats('user123');
+      const result = await userService.updateLastActive('user123');
 
-      expect(result).toEqual(mockStats);
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'user123',
+        { 'stats.lastActiveDate': expect.any(Date) }
+      );
+      expect(result.stats.lastActiveDate).toBeInstanceOf(Date);
     });
 
     it('should throw error if user not found', async () => {
       userRepository.findById.mockResolvedValue(null);
 
-      await expect(userService.getUserStats('user123')).rejects.toThrow('User not found');
+      await expect(userService.updateLastActive('user123')).rejects.toThrow('User not found');
     });
   });
 });

@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema({
   avatarUrl: {
     type: String
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
   preferences: {
     dailyGoal: {
       type: Number,
@@ -27,10 +32,7 @@ const userSchema = new mongoose.Schema({
     maxSessionSize: {
       type: Number,
       default: 10
-    },
-    preferredCategories: [{
-      type: String
-    }]
+    }
   },
   stats: {
     totalReviews: {
