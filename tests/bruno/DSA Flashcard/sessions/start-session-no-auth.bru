@@ -1,0 +1,33 @@
+meta {
+  name: Start Session - No Auth
+  type: http
+  seq: 3
+  tags: [
+    sessions
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {}
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(401);
+  }
+}
+
+docs {
+  Verify that starting a session without authentication returns 401.
+}

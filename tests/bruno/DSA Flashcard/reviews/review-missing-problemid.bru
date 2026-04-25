@@ -1,0 +1,38 @@
+meta {
+  name: Review - Missing Problem ID
+  type: http
+  seq: 5
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "quality": "easy"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('problemId');
+  }
+}
+
+docs {
+  Verify that omitting problemId returns 400 ValidationError with field 'problemId'.
+}

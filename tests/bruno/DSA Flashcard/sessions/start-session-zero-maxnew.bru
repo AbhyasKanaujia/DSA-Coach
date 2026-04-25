@@ -1,0 +1,39 @@
+meta {
+  name: Start Session - Zero MaxNew
+  type: http
+  seq: 9
+  tags: [
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "maxNew": 0
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('problems');
+    expect(response.body).to.have.property('meta');
+    // With maxNew=0, only due problems should be returned (no new ones)
+  }
+}
+
+docs {
+  Start a session with maxNew=0, meaning no brand-new problems are included.
+
+  This is valid — users who only want review problems can set maxNew to 0.
+}

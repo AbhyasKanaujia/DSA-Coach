@@ -8,6 +8,7 @@ const { ensureAdminUser, migrateCreatedBy } = require('./config/seed');
 const authRoutes = require('./routes/auth');
 const problemRoutes = require('./routes/problems');
 const sessionRoutes = require('./routes/sessions');
+const reviewRoutes = require('./routes/reviews');
 const progressRoutes = require('./routes/progress');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/progress', progressRoutes);
 
 app.get('/health', (req, res) => {

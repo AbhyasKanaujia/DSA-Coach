@@ -1,0 +1,36 @@
+meta {
+  name: Review - No Auth
+  type: http
+  seq: 4
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "507f1f77bcf86cd799439011",
+    "quality": "easy"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(401);
+  }
+}
+
+docs {
+  Verify that submitting a review without authentication returns 401.
+}

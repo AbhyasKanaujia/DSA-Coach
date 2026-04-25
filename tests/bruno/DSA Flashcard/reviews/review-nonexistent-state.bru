@@ -1,0 +1,40 @@
+meta {
+  name: Review - Non-existent Problem State
+  type: http
+  seq: 9
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "507f1f77bcf86cd799439011",
+    "quality": "easy"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(404);
+    expect(response.body).to.have.property('error');
+  }
+}
+
+docs {
+  Review a problem the user has never started (no UserProblemState exists).
+
+  Returns 404 because you can only review problems you've started.
+  To start a problem, the user must first start a session which creates the state.
+}

@@ -1,0 +1,61 @@
+meta {
+  name: Review - Easy (New to Learning)
+  type: http
+  seq: 1
+  tags: [
+    reviews
+    smoke
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowProblemId1}}",
+    "quality": "easy"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('state');
+    expect(response.body).to.have.property('nextDue');
+    expect(response.body).to.have.property('easeFactor');
+    expect(response.body).to.have.property('interval');
+    expect(response.body).to.have.property('status');
+
+    // First review on a new problem should transition to 'learning'
+    expect(response.body.status).to.equal('learning');
+    expect(response.body.easeFactor).to.be.greaterThan(2.5);
+    expect(response.body.interval).to.equal(1);
+  }
+}
+
+docs {
+  Submit a review with quality "easy" on a problem.
+
+  This is the most common flow: a user reviews a new problem and marks it easy.
+
+  Expected behavior:
+  - Status transitions from 'new' to 'learning'
+  - Ease factor increases (> 2.5)
+  - Interval set to 1 (first successful review)
+  - nextDue date is set to tomorrow
+
+  Prerequisites: Run flow 1-6 first to set flowAuthToken and flowProblemId1.
+}

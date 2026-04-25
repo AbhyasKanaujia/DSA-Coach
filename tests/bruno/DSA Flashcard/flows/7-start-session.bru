@@ -1,0 +1,50 @@
+meta {
+  name: Flow 7 - Start Session (creates problem states)
+  type: http
+  seq: 7
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "limit": 10,
+    "maxNew": 3
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('problems');
+    expect(response.body).to.have.property('meta');
+    expect(response.body.meta).to.have.property('dueCount');
+    expect(response.body.meta).to.have.property('newCount');
+    expect(response.body.meta).to.have.property('total');
+  }
+}
+
+docs {
+  Step 7: Start a session to create UserProblemState records for the flow test problems.
+
+  This is needed because the review endpoint requires an existing state.
+  When the session starts, new problems get state records created (status: 'new').
+
+  If the user has no active collections, this returns an empty session.
+}

@@ -2,6 +2,35 @@ const { SR } = require('../config/constants');
 const DateUtils = require('../utils/dateUtils');
 
 class SpacedRepetitionService {
+  computeStatusTransition(currentStatus, quality) {
+    const qualityScore = SR.QUALITY_MAP[quality];
+    if (qualityScore === undefined) {
+      throw new Error('Invalid quality. Must be again, hard, or easy');
+    }
+
+    if (currentStatus === 'new') {
+      return 'learning';
+    }
+
+    if (qualityScore < 3) {
+      return 'learning';
+    }
+
+    if (currentStatus === 'learning') {
+      return qualityScore >= 5 ? 'review' : 'learning';
+    }
+
+    if (currentStatus === 'review') {
+      return qualityScore >= 5 ? 'mastered' : 'review';
+    }
+
+    if (currentStatus === 'mastered') {
+      return 'mastered';
+    }
+
+    return currentStatus;
+  }
+
   reviewCard(card, quality) {
     const qualityScore = SR.QUALITY_MAP[quality];
     if (!qualityScore) {
@@ -31,6 +60,7 @@ class SpacedRepetitionService {
 
     const now = DateUtils.nowUTC();
     const nextReviewAt = DateUtils.addDays(now, interval);
+    const status = this.computeStatusTransition(card.status || 'new', quality);
 
     return {
       easeFactor,
@@ -39,7 +69,8 @@ class SpacedRepetitionService {
       nextReviewAt,
       lastReviewedAt: now,
       lastResult: quality,
-      lapseCount
+      lapseCount,
+      status
     };
   }
 

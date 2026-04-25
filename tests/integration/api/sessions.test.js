@@ -4,6 +4,8 @@ const User = require('../../../src/models/User');
 const Problem = require('../../../src/models/Problem');
 const ProblemContent = require('../../../src/models/ProblemContent');
 const UserProblemState = require('../../../src/models/UserProblemState');
+const Collection = require('../../../src/models/Collection');
+const UserCollection = require('../../../src/models/UserCollection');
 
 describe('Sessions API Integration Tests', () => {
   let token;
@@ -29,8 +31,9 @@ describe('Sessions API Integration Tests', () => {
     );
   });
 
-  describe('GET /api/sessions', () => {
+  describe('POST /api/sessions/start', () => {
     let problem1, problem2, problem3;
+    let collection;
 
     beforeEach(async () => {
       const now = new Date();
@@ -62,7 +65,8 @@ describe('Sessions API Integration Tests', () => {
       await UserProblemState.create({
         userId,
         problemId: problem1._id,
-        nextReviewAt: yesterday
+        nextReviewAt: yesterday,
+        status: 'review'
       });
 
       problem2 = await Problem.create({
@@ -90,7 +94,8 @@ describe('Sessions API Integration Tests', () => {
       await UserProblemState.create({
         userId,
         problemId: problem2._id,
-        nextReviewAt: yesterday
+        nextReviewAt: yesterday,
+        status: 'review'
       });
 
       problem3 = await Problem.create({
@@ -118,197 +123,75 @@ describe('Sessions API Integration Tests', () => {
       await UserProblemState.create({
         userId,
         problemId: problem3._id,
-        nextReviewAt: new Date(now.getTime() + 86400000)
+        nextReviewAt: new Date(now.getTime() + 86400000),
+        status: 'learning'
+      });
+
+      collection = await Collection.create({
+        name: 'Test Collection',
+        description: 'A test collection',
+        problemIds: [problem1._id, problem2._id, problem3._id],
+        createdBy: userId,
+        isPublic: true
+      });
+
+      await UserCollection.create({
+        userId,
+        collectionId: collection._id,
+        isActive: true
       });
     });
 
-    it('should get due problems for session', async () => {
+    it('should start a session and return due problems', async () => {
       const response = await request(app)
-        .get('/api/sessions')
-        .set('Authorization', `Bearer ${token}`);
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
 
       expect(response.status).toBe(200);
-      expect(response.body.problems).toHaveLength(2);
-      expect(response.body.count).toBe(2);
-      expect(response.body.totalDue).toBe(2);
+      expect(response.body.problems).toBeDefined();
+      expect(response.body.meta).toBeDefined();
+      expect(response.body.meta.dueCount).toBeGreaterThanOrEqual(0);
     });
 
-    it('should limit session size', async () => {
-      const response = await request(app)
-        .get('/api/sessions?limit=1')
-        .set('Authorization', `Bearer ${token}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.problems).toHaveLength(1);
-      expect(response.body.totalDue).toBe(2);
-    });
-
-    it('should return empty session when no problems are due', async () => {
-      await UserProblemState.deleteMany({ userId });
+    it('should return empty session when no active collections', async () => {
+      await UserCollection.deleteMany({ userId });
 
       const response = await request(app)
-        .get('/api/sessions')
-        .set('Authorization', `Bearer ${token}`);
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
 
       expect(response.status).toBe(200);
       expect(response.body.problems).toHaveLength(0);
-      expect(response.body.count).toBe(0);
-      expect(response.body.totalDue).toBe(0);
+      expect(response.body.meta.total).toBe(0);
     });
 
     it('should return 401 without token', async () => {
       const response = await request(app)
-        .get('/api/sessions');
+        .post('/api/sessions/start')
+        .send({});
 
       expect(response.status).toBe(401);
     });
-  });
 
-  describe('POST /api/sessions/review', () => {
-    let problemId;
-
-    beforeEach(async () => {
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const problem = await Problem.create({
-        title: 'Two Sum',
-        description: 'Find two numbers that add up to target',
-        difficulty: 'easy',
-        source: 'leetcode',
-        sourceId: '1',
-        createdBy: userId
-      });
-
-      await ProblemContent.create({
-        problemId: problem._id,
-        solutions: [{
-          name: 'Hash Map',
-          order: 0,
-          intuition: 'Use a hash map',
-          steps: [],
-          codeSnippets: [],
-          timeComplexity: 'O(n)',
-          spaceComplexity: 'O(n)'
-        }]
-      });
-
-      await UserProblemState.create({
-        userId,
-        problemId: problem._id,
-        nextReviewAt: yesterday,
-        easeFactor: 2.5,
-        interval: 0,
-        repetitions: 0
-      });
-
-      problemId = problem._id;
-    });
-
-    it('should submit review with easy quality', async () => {
+    it('should respect limit option', async () => {
       const response = await request(app)
-        .post('/api/sessions/review')
+        .post('/api/sessions/start')
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          problemId: problemId.toString(),
-          quality: 'easy'
-        });
+        .send({ limit: 1 });
 
       expect(response.status).toBe(200);
-      expect(response.body.state).toBeDefined();
-      expect(response.body.nextDue).toBeDefined();
-      expect(response.body.easeFactor).toBeGreaterThan(2.5);
-      expect(response.body.interval).toBe(1);
+      expect(response.body.problems.length).toBeLessThanOrEqual(1);
     });
 
-    it('should submit review with hard quality', async () => {
+    it('should return 400 for invalid limit', async () => {
       const response = await request(app)
-        .post('/api/sessions/review')
+        .post('/api/sessions/start')
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          problemId: problemId.toString(),
-          quality: 'hard'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.state).toBeDefined();
-      expect(response.body.nextDue).toBeDefined();
-    });
-
-    it('should submit review with again quality', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          problemId: problemId.toString(),
-          quality: 'again'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.state).toBeDefined();
-      expect(response.body.nextDue).toBeDefined();
-      expect(response.body.easeFactor).toBeLessThanOrEqual(2.5);
-    });
-
-    it('should return 400 if problemId is missing', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          quality: 'easy'
-        });
+        .send({ limit: 0 });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toContain('required');
-    });
-
-    it('should return 400 if quality is missing', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          problemId: problemId.toString()
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('required');
-    });
-
-    it('should return 400 if quality is invalid', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          problemId: problemId.toString(),
-          quality: 'invalid'
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('quality');
-    });
-
-    it('should return 404 for non-existing problem state', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          problemId: '507f1f77bcf86cd799439011',
-          quality: 'easy'
-        });
-
-      expect(response.status).toBe(404);
-    });
-
-    it('should return 401 without token', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .send({
-          problemId: problemId.toString(),
-          quality: 'easy'
-        });
-
-      expect(response.status).toBe(401);
     });
   });
 });

@@ -72,6 +72,13 @@ class CollectionRepository {
   async count(filters = {}) {
     return await Collection.countDocuments(filters);
   }
+
+  async removeProblemFromAll(problemId) {
+    return await Collection.updateMany(
+      { problemIds: problemId },
+      { $pull: { problemIds: problemId } }
+    );
+  }
 }
 
 module.exports = new CollectionRepository();

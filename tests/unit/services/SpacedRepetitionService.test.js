@@ -1,12 +1,63 @@
 const spacedRepetitionService = require('../../../src/services/SpacedRepetitionService');
 
 describe('SpacedRepetitionService', () => {
+  describe('computeStatusTransition', () => {
+    it('should transition new to learning regardless of quality', () => {
+      expect(spacedRepetitionService.computeStatusTransition('new', 'easy')).toBe('learning');
+      expect(spacedRepetitionService.computeStatusTransition('new', 'hard')).toBe('learning');
+      expect(spacedRepetitionService.computeStatusTransition('new', 'again')).toBe('learning');
+    });
+
+    it('should transition learning to review on easy', () => {
+      expect(spacedRepetitionService.computeStatusTransition('learning', 'easy')).toBe('review');
+    });
+
+    it('should keep learning on hard', () => {
+      expect(spacedRepetitionService.computeStatusTransition('learning', 'hard')).toBe('learning');
+    });
+
+    it('should transition learning to learning on again (lapse)', () => {
+      expect(spacedRepetitionService.computeStatusTransition('learning', 'again')).toBe('learning');
+    });
+
+    it('should transition review to mastered on easy', () => {
+      expect(spacedRepetitionService.computeStatusTransition('review', 'easy')).toBe('mastered');
+    });
+
+    it('should keep review on hard', () => {
+      expect(spacedRepetitionService.computeStatusTransition('review', 'hard')).toBe('review');
+    });
+
+    it('should transition review to learning on again (lapse)', () => {
+      expect(spacedRepetitionService.computeStatusTransition('review', 'again')).toBe('learning');
+    });
+
+    it('should keep mastered on easy', () => {
+      expect(spacedRepetitionService.computeStatusTransition('mastered', 'easy')).toBe('mastered');
+    });
+
+    it('should keep mastered on hard', () => {
+      expect(spacedRepetitionService.computeStatusTransition('mastered', 'hard')).toBe('mastered');
+    });
+
+    it('should transition mastered to learning on again (lapse)', () => {
+      expect(spacedRepetitionService.computeStatusTransition('mastered', 'again')).toBe('learning');
+    });
+
+    it('should throw error for invalid quality', () => {
+      expect(() => {
+        spacedRepetitionService.computeStatusTransition('new', 'invalid');
+      }).toThrow('Invalid quality');
+    });
+  });
+
   describe('reviewCard', () => {
     const mockCard = {
       easeFactor: 2.5,
       interval: 0,
       repetitions: 0,
-      lapseCount: 0
+      lapseCount: 0,
+      status: 'new'
     };
 
     describe('quality mapping', () => {
@@ -29,6 +80,34 @@ describe('SpacedRepetitionService', () => {
         expect(() => {
           spacedRepetitionService.reviewCard(mockCard, 'invalid');
         }).toThrow('Invalid quality');
+      });
+    });
+
+    describe('status in return value', () => {
+      it('should include status in return value', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'easy');
+        expect(result.status).toBe('learning');
+      });
+
+      it('should transition status from new to learning', () => {
+        const result = spacedRepetitionService.reviewCard({ ...mockCard, status: 'new' }, 'easy');
+        expect(result.status).toBe('learning');
+      });
+
+      it('should transition learning to review on easy', () => {
+        const result = spacedRepetitionService.reviewCard({ ...mockCard, status: 'learning' }, 'easy');
+        expect(result.status).toBe('review');
+      });
+
+      it('should transition review to mastered on easy', () => {
+        const result = spacedRepetitionService.reviewCard({ ...mockCard, status: 'review' }, 'easy');
+        expect(result.status).toBe('mastered');
+      });
+
+      it('should default to new status if not provided', () => {
+        const cardWithoutStatus = { easeFactor: 2.5, interval: 0, repetitions: 0, lapseCount: 0 };
+        const result = spacedRepetitionService.reviewCard(cardWithoutStatus, 'easy');
+        expect(result.status).toBe('learning');
       });
     });
 

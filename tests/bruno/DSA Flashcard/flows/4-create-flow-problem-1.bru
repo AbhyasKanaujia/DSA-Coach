@@ -1,0 +1,66 @@
+meta {
+  name: Flow 4 - Create Flow Problem 1
+  type: http
+  seq: 4
+  tags: [
+    flows
+    e2e
+    setup
+  ]
+}
+
+post {
+  url: {{baseUrl}}/problems
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAdminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Flow Test - Two Sum",
+    "description": "Find two numbers that add up to target",
+    "difficulty": "easy",
+    "tags": ["array", "hash-table"],
+    "companies": ["google"],
+    "source": "leetcode",
+    "sourceId": "flow-test-1",
+    "solutions": [
+      {
+        "name": "Hash Map",
+        "intuition": "Use a hash map for O(n) lookup",
+        "steps": ["Iterate", "Check complement"],
+        "codeSnippets": [{"language": "python", "code": "def twoSum(nums, target):\n    seen = {}"}],
+        "timeComplexity": "O(n)",
+        "spaceComplexity": "O(n)"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar('flowProblemId1', res.body.id);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+    if (response.status === 201) {
+      expect(response.body).to.have.property('id');
+    }
+  }
+}
+
+docs {
+  Step 4: Admin creates the first test problem for the flow.
+  Accepts 409 if problem already exists (idempotent).
+}

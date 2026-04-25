@@ -1,0 +1,39 @@
+meta {
+  name: Start Session - With Limit
+  type: http
+  seq: 2
+  tags: [
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "limit": 5
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body.problems).to.have.length.at.most(5);
+    expect(response.body.meta).to.have.property('dueCount');
+    expect(response.body.meta).to.have.property('newCount');
+  }
+}
+
+docs {
+  Start a session with a custom limit of 5 problems.
+
+  Verifies that the session respects the limit parameter.
+}

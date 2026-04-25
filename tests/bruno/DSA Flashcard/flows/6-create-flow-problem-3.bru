@@ -1,0 +1,65 @@
+meta {
+  name: Flow 6 - Create Flow Problem 3
+  type: http
+  seq: 6
+  tags: [
+    flows
+    e2e
+    setup
+  ]
+}
+
+post {
+  url: {{baseUrl}}/problems
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAdminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Flow Test - Merge Intervals",
+    "description": "Merge overlapping intervals",
+    "difficulty": "hard",
+    "tags": ["array", "sorting"],
+    "companies": ["amazon", "meta"],
+    "source": "leetcode",
+    "sourceId": "flow-test-3",
+    "solutions": [
+      {
+        "name": "Sort and Merge",
+        "intuition": "Sort by start, then merge overlapping",
+        "steps": ["Sort intervals", "Iterate and merge"],
+        "codeSnippets": [{"language": "python", "code": "def merge(intervals):\n    intervals.sort()"}],
+        "timeComplexity": "O(n log n)",
+        "spaceComplexity": "O(n)"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar('flowProblemId3', res.body.id);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+    if (response.status === 201) {
+      expect(response.body).to.have.property('id');
+    }
+  }
+}
+
+docs {
+  Step 6: Admin creates the third test problem for the flow.
+}

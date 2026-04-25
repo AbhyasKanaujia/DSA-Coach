@@ -1,0 +1,65 @@
+meta {
+  name: Flow 5 - Create Flow Problem 2
+  type: http
+  seq: 5
+  tags: [
+    flows
+    e2e
+    setup
+  ]
+}
+
+post {
+  url: {{baseUrl}}/problems
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAdminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Flow Test - Reverse Linked List",
+    "description": "Reverse a singly linked list",
+    "difficulty": "medium",
+    "tags": ["linked-list", "recursion"],
+    "companies": ["meta"],
+    "source": "leetcode",
+    "sourceId": "flow-test-2",
+    "solutions": [
+      {
+        "name": "Iterative",
+        "intuition": "Use three pointers to reverse in place",
+        "steps": ["Track prev, curr, next", "Reverse links"],
+        "codeSnippets": [{"language": "python", "code": "def reverseList(head):\n    prev = None"}],
+        "timeComplexity": "O(n)",
+        "spaceComplexity": "O(1)"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar('flowProblemId2', res.body.id);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+    if (response.status === 201) {
+      expect(response.body).to.have.property('id');
+    }
+  }
+}
+
+docs {
+  Step 5: Admin creates the second test problem for the flow.
+}

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const sessionController = require('../controllers/SessionController');
+const reviewController = require('../controllers/ReviewController');
 const auth = require('../middleware/auth');
 
-router.post('/start', auth, sessionController.startSession);
+router.post('/', auth, reviewController.submitReview);
 
 module.exports = router;

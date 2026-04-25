@@ -1,0 +1,41 @@
+meta {
+  name: Review - Invalid Quality
+  type: http
+  seq: 7
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "507f1f77bcf86cd799439011",
+    "quality": "medium"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('quality');
+  }
+}
+
+docs {
+  Verify that an invalid quality value ("medium" instead of again/hard/easy) returns 400 ValidationError.
+
+  Valid values are: again, hard, easy
+}

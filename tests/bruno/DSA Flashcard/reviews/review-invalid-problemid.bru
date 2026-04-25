@@ -1,0 +1,40 @@
+meta {
+  name: Review - Invalid Problem ID Format
+  type: http
+  seq: 8
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "not-a-valid-id",
+    "quality": "easy"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('problemId');
+  }
+}
+
+docs {
+  Verify that a non-ObjectId problemId returns 400 ValidationError.
+
+  problemId must be a valid 24-character hex string (MongoDB ObjectId).
+}

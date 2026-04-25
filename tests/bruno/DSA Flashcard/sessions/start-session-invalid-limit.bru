@@ -1,0 +1,39 @@
+meta {
+  name: Start Session - Invalid Limit
+  type: http
+  seq: 4
+  tags: [
+    sessions
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "limit": 0
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('limit');
+  }
+}
+
+docs {
+  Verify that limit=0 is rejected with a 400 ValidationError.
+  Valid range is 1-50.
+}

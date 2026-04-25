@@ -1,0 +1,38 @@
+meta {
+  name: Start Session - Negative MaxNew
+  type: http
+  seq: 8
+  tags: [
+    sessions
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "maxNew": -1
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('maxNew');
+  }
+}
+
+docs {
+  Verify that negative maxNew is rejected with 400 ValidationError.
+  Valid range is 0-20.
+}

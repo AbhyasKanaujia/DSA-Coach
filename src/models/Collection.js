@@ -10,8 +10,7 @@ const collectionSchema = new mongoose.Schema({
   },
   problemIds: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Problem',
-    validate: [val => val.length <= 1000, 'Collection cannot exceed 1000 problems']
+    ref: 'Problem'
   }],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

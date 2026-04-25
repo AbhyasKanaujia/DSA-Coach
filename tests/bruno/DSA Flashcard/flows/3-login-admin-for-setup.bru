@@ -1,0 +1,44 @@
+meta {
+  name: Flow 3 - Login Admin for Setup
+  type: http
+  seq: 3
+  tags: [
+    flows
+    e2e
+    setup
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('flowAdminToken', res.body.token);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('token');
+  }
+}
+
+docs {
+  Step 3 of E2E flow: Login as admin to create test problems and collections.
+}

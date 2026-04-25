@@ -1,0 +1,39 @@
+meta {
+  name: Start Session - Invalid MaxNew
+  type: http
+  seq: 5
+  tags: [
+    sessions
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "maxNew": 25
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('maxNew');
+  }
+}
+
+docs {
+  Verify that maxNew=25 (above max of 20) is rejected with a 400 ValidationError.
+  Valid range is 0-20.
+}

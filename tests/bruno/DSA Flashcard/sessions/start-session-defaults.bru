@@ -1,0 +1,46 @@
+meta {
+  name: Start Session - With MaxNew
+  type: http
+  seq: 7
+  tags: [
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "limit": 10,
+    "maxNew": 5
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('problems');
+    expect(response.body).to.have.property('meta');
+    expect(response.body.meta).to.have.property('dueCount');
+    expect(response.body.meta).to.have.property('newCount');
+    expect(response.body.meta).to.have.property('total');
+    // Total should be dueCount + newCount
+    expect(response.body.meta.total).to.equal(
+      response.body.meta.dueCount + response.body.meta.newCount
+    );
+  }
+}
+
+docs {
+  Start a session with both limit and maxNew parameters.
+
+  Verifies that meta.total = meta.dueCount + meta.newCount.
+}

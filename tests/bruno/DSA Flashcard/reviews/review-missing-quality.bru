@@ -1,0 +1,38 @@
+meta {
+  name: Review - Missing Quality
+  type: http
+  seq: 6
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "507f1f77bcf86cd799439011"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+    expect(response.body).to.have.property('field');
+    expect(response.body.field).to.equal('quality');
+  }
+}
+
+docs {
+  Verify that omitting quality returns 400 ValidationError with field 'quality'.
+}

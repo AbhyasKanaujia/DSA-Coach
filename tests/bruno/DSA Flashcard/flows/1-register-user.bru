@@ -1,0 +1,45 @@
+meta {
+  name: Flow 1 - Register User
+  type: http
+  seq: 1
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "name": "{{testName}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 201 || res.status === 409) {
+    // Proceed to login regardless - user might already exist from prior run
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+  }
+}
+
+docs {
+  Step 1 of E2E flow: Register a fresh user.
+
+  Accepts 409 (user exists) for idempotent test runs.
+}

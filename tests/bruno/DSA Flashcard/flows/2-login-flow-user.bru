@@ -1,0 +1,46 @@
+meta {
+  name: Flow 2 - Login Flow User
+  type: http
+  seq: 2
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('flowAuthToken', res.body.token);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('token');
+    expect(response.body.token).to.be.a('string');
+  }
+}
+
+docs {
+  Step 2 of E2E flow: Login as the flow test user and save the token.
+
+  Uses the same test user credentials from the environment.
+}

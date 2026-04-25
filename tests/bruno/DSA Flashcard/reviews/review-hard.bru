@@ -1,0 +1,57 @@
+meta {
+  name: Review - Hard
+  type: http
+  seq: 2
+  tags: [
+    reviews
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowProblemId2}}",
+    "quality": "hard"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('state');
+    expect(response.body).to.have.property('status');
+    expect(response.body).to.have.property('easeFactor');
+    expect(response.body).to.have.property('interval');
+    expect(response.body).to.have.property('nextDue');
+
+    // Hard review on new problem: new -> learning
+    expect(response.body.status).to.equal('learning');
+  }
+}
+
+docs {
+  Submit a review with quality "hard".
+
+  A "hard" review means the user struggled but eventually got it.
+
+  Expected behavior:
+  - Status stays 'learning' (hard doesn't graduate from learning)
+  - Ease factor slightly decreases
+  - Interval set to 1 (first successful review)
+
+  Prerequisites: Run flow 1-6 first to set flowAuthToken and flowProblemId2.
+}

@@ -1,0 +1,57 @@
+meta {
+  name: Review - Again (Lapse)
+  type: http
+  seq: 3
+  tags: [
+    reviews
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowProblemId3}}",
+    "quality": "again"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('state');
+    expect(response.body).to.have.property('status');
+    expect(response.body).to.have.property('easeFactor');
+    expect(response.body).to.have.property('interval');
+
+    // "Again" is a lapse - status goes to learning, interval resets to 1
+    expect(response.body.status).to.equal('learning');
+    expect(response.body.interval).to.equal(1);
+    expect(response.body.easeFactor).to.be.at.most(2.5);
+  }
+}
+
+docs {
+  Submit a review with quality "again" — the user forgot the answer.
+
+  This is the lapse flow:
+  - Interval resets to 1 (review again tomorrow)
+  - Repetitions reset to 0
+  - Ease factor decreases
+  - Status transitions to 'learning' regardless of current status
+
+  Prerequisites: Run flow 1-6 first to set flowAuthToken and flowProblemId3.
+}

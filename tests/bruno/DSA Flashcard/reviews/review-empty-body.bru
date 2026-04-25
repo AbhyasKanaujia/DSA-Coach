@@ -1,0 +1,35 @@
+meta {
+  name: Review - Empty Body
+  type: http
+  seq: 10
+  tags: [
+    reviews
+    negative
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {}
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+    expect(response.body).to.have.property('field');
+  }
+}
+
+docs {
+  Submit a review with an empty body. Should return 400 with field-level error.
+}

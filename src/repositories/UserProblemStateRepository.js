@@ -134,6 +134,41 @@ class UserProblemStateRepository {
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
   }
+
+  async findByUserAndProblems(userId, problemIds) {
+    if (!problemIds || problemIds.length === 0) return [];
+    return await UserProblemState.find({
+      userId,
+      problemId: { $in: problemIds }
+    }).lean();
+  }
+
+  async bulkCreate(states) {
+    if (!states || states.length === 0) return [];
+    return await UserProblemState.insertMany(states);
+  }
+
+  async bulkUpdate(updates) {
+    if (!updates || updates.length === 0) return [];
+    const results = [];
+    for (const { userId, problemId, ...fields } of updates) {
+      const updated = await UserProblemState.findOneAndUpdate(
+        { userId, problemId },
+        { $set: fields },
+        { new: true }
+      );
+      if (updated) results.push(updated);
+    }
+    return results;
+  }
+
+  async upsert(userId, problemId, update) {
+    return await UserProblemState.findOneAndUpdate(
+      { userId, problemId },
+      { $set: update },
+      { new: true, upsert: true, runValidators: true }
+    );
+  }
 }
 
 module.exports = new UserProblemStateRepository();

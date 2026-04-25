@@ -1,0 +1,55 @@
+meta {
+  name: Start Session
+  type: http
+  seq: 1
+  tags: [
+    sessions
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {}
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('problems');
+    expect(response.body).to.have.property('meta');
+    expect(response.body.meta).to.have.property('dueCount');
+    expect(response.body.meta).to.have.property('newCount');
+    expect(response.body.meta).to.have.property('total');
+    expect(response.body.problems).to.be.an('array');
+  }
+}
+
+docs {
+  Start a new learning session. Returns due problems (review) and new problems.
+
+  POST is used because this creates state records for new problems.
+
+  Body (all optional):
+  - limit: max problems in session (default 10, max 50)
+  - maxNew: max new problems per session (default 3, max 20)
+
+  Response:
+  {
+    problems: [...],  // ordered: due first (sorted by nextReviewAt ASC), then new
+    meta: {
+      dueCount: number,   // total due problems available
+      newCount: number,   // total new problems available
+      total: number       // dueCount + newCount
+    }
+  }
+}
