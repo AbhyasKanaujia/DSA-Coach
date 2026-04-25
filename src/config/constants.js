@@ -11,5 +11,9 @@ module.exports = {
   },
   AUTH: {
     JWT_EXPIRES_IN: '7d'
+  },
+  ADMIN: {
+    EMAIL: process.env.ADMIN_EMAIL || 'admin@dsaflashcard.local',
+    NAME: 'DSA Coach'
   }
 };

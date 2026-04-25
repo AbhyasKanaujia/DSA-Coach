@@ -1,0 +1,37 @@
+meta {
+  name: Update Profile
+  type: http
+  seq: 2
+  tags: [
+    profile
+  ]
+}
+
+put {
+  url: {{baseUrl}}/auth/profile
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Updated Name"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body.name).to.equal('Updated Name');
+  }
+}
+
+docs {
+  Update the authenticated user's profile. Supports name and preferences updates.
+
+  Body fields (all optional): name, preferences: { dailyGoal, maxSessionSize }
+}

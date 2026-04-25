@@ -1,0 +1,39 @@
+meta {
+  name: Update Preferences
+  type: http
+  seq: 3
+  tags: [
+    profile
+  ]
+}
+
+put {
+  url: {{baseUrl}}/auth/profile
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "preferences": {
+      "dailyGoal": 30,
+      "maxSessionSize": 15
+    }
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body.preferences.dailyGoal).to.equal(30);
+    expect(response.body.preferences.maxSessionSize).to.equal(15);
+  }
+}
+
+docs {
+  Update user preferences. Daily goal (1-100) and max session size (1-50).
+}

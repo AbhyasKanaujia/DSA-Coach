@@ -1,0 +1,26 @@
+meta {
+  name: Unauthorized Access
+  type: http
+  seq: 4
+  tags: [
+    profile
+    auth
+    error
+  ]
+}
+
+get {
+  url: {{baseUrl}}/auth/profile
+  body: none
+  auth: none
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(401);
+  }
+}
+
+docs {
+  Accessing profile without a token should return 401 Unauthorized.
+}

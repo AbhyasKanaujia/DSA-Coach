@@ -3,10 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
+const { ensureAdminUser, migrateCreatedBy } = require('./config/seed');
 
 const authRoutes = require('./routes/auth');
-const cardRoutes = require('./routes/cards');
+const problemRoutes = require('./routes/problems');
 const sessionRoutes = require('./routes/sessions');
+const progressRoutes = require('./routes/progress');
 
 const app = express();
 
@@ -33,8 +35,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRoutes);
-app.use('/api/cards', cardRoutes);
+app.use('/api/problems', problemRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/progress', progressRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -43,7 +46,9 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 if (require.main === module) {
-  connectDB().then(() => {
+  connectDB().then(async () => {
+    const adminUser = await ensureAdminUser();
+    await migrateCreatedBy(adminUser._id);
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

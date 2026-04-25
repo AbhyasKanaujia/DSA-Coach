@@ -1,0 +1,37 @@
+meta {
+  name: Register - Duplicate Email
+  type: http
+  seq: 3
+  tags: [
+    auth
+    error
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "password123",
+    "name": "Duplicate User"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(409);
+  }
+}
+
+docs {
+  Attempting to register with an email that already exists should return 409 Conflict.
+}

@@ -1,0 +1,46 @@
+meta {
+  name: Get Progress
+  type: http
+  seq: 1
+  tags: [
+    progress
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/progress
+  body: none
+  auth: inherit
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('totalSolved');
+    expect(response.body).to.have.property('totalReviewed');
+    expect(response.body).to.have.property('streak');
+    expect(response.body).to.have.property('masteryBreakdown');
+    expect(response.body.masteryBreakdown).to.have.property('new');
+    expect(response.body.masteryBreakdown).to.have.property('learning');
+    expect(response.body.masteryBreakdown).to.have.property('review');
+    expect(response.body.masteryBreakdown).to.have.property('mastered');
+    expect(response.body.totalSolved).to.equal(
+      response.body.masteryBreakdown.new +
+      response.body.masteryBreakdown.learning +
+      response.body.masteryBreakdown.review +
+      response.body.masteryBreakdown.mastered
+    );
+  }
+}
+
+docs {
+  Get the authenticated user's learning progress.
+
+  Returns:
+  - totalSolved: total unique problems the user has interacted with
+  - totalReviewed: total number of review events
+  - streak: current daily streak
+  - lastActiveDate: last active date
+  - masteryBreakdown: { new, learning, review, mastered } counts
+}

@@ -1,6 +1,14 @@
 const errorHandler = (err, req, res, next) => {
   console.error(err.stack);
 
+  if (err.statusCode === 409) {
+    return res.status(409).json({ error: 'Duplicate entry' });
+  }
+
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({ error: err.message });
+  }
+
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       error: 'Validation Error',
@@ -28,7 +36,7 @@ const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ error: err.message });
   }
 
-  if (err.message === 'Card not found' || err.message === 'User not found') {
+  if (err.message === 'Card not found' || err.message === 'User not found' || err.message === 'Problem state not found' || err.message === 'Problem not found' || err.message === 'Problem content not found' || err.message === 'Collection not found' || err.message === 'Collection subscription not found' || err.message === 'User problem state not found') {
     return res.status(404).json({ error: err.message });
   }
 

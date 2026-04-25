@@ -1,0 +1,45 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+  tags: [
+    auth
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "name": "{{testName}}"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    // Accept 201 (new user) or 409 (already exists) as valid outcomes
+    expect([201, 409]).to.include(response.status);
+    if (response.status === 201) {
+      expect(response.body.user).to.have.property('email');
+      expect(response.body.user).to.have.property('name');
+      expect(response.body.user).to.not.have.property('passwordHash');
+    }
+  }
+}
+
+docs {
+  Register a new user. Returns the user object (without passwordHash).
+
+  Accepts 409 Conflict if user already exists (idempotent for test runs).
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Register - Missing Fields
+  type: http
+  seq: 5
+  tags: [
+    auth
+    error
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "incomplete@example.com"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(400);
+    expect(response.body).to.have.property('error');
+  }
+}
+
+docs {
+  Registering with missing required fields (password, name) should return 400.
+}

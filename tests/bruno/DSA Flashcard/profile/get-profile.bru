@@ -1,0 +1,31 @@
+meta {
+  name: Get Profile
+  type: http
+  seq: 1
+  tags: [
+    profile
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/auth/profile
+  body: none
+  auth: inherit
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('email');
+    expect(response.body).to.have.property('name');
+    expect(response.body).to.have.property('role');
+    expect(response.body).to.not.have.property('passwordHash');
+  }
+}
+
+docs {
+  Get the authenticated user's profile. Requires valid Bearer token.
+
+  Returns user object with email, name, role, preferences, and stats.
+}

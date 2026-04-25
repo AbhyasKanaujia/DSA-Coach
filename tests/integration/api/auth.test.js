@@ -53,7 +53,8 @@ describe('Auth API Integration Tests', () => {
         .post('/api/auth/register')
         .send({
           email: 'duplicate@example.com',
-          password: 'password123'
+          password: 'password123',
+          name: 'Test User'
         });
 
       expect(response.status).toBe(409);
@@ -150,7 +151,7 @@ describe('Auth API Integration Tests', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.userId).toBeDefined();
+      expect(response.body._id).toBeDefined();
       expect(response.body.email).toBeDefined();
       expect(response.body.stats).toBeDefined();
     });
@@ -212,50 +213,6 @@ describe('Auth API Integration Tests', () => {
         .send({
           name: 'Updated Name'
         });
-
-      expect(response.status).toBe(401);
-    });
-  });
-
-  describe('GET /api/auth/stats', () => {
-    let token;
-
-    beforeEach(async () => {
-      const bcrypt = require('bcryptjs');
-      const passwordHash = await bcrypt.hash('password123', 10);
-
-      const user = await User.create({
-        email: 'stats@example.com',
-        passwordHash,
-        name: 'Stats User',
-        stats: {
-          totalReviews: 10,
-          streak: 5,
-          lastActiveDate: new Date()
-        }
-      });
-
-      const jwt = require('jsonwebtoken');
-      token = jwt.sign(
-        { userId: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-    });
-
-    it('should get user stats', async () => {
-      const response = await request(app)
-        .get('/api/auth/stats')
-        .set('Authorization', `Bearer ${token}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.totalReviews).toBe(10);
-      expect(response.body.streak).toBe(5);
-    });
-
-    it('should return 401 without token', async () => {
-      const response = await request(app)
-        .get('/api/auth/stats');
 
       expect(response.status).toBe(401);
     });

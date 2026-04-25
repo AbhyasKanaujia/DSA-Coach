@@ -42,17 +42,8 @@ class AuthController {
 
   async updateProfile(req, res, next) {
     try {
-      const user = await userService.updateUser(req.userId, req.body);
+      const user = await userService.updateProfile(req.userId, req.body);
       res.json(user);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getStats(req, res, next) {
-    try {
-      const stats = await userService.getUserStats(req.userId);
-      res.json(stats);
     } catch (error) {
       next(error);
     }

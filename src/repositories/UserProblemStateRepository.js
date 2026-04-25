@@ -1,4 +1,5 @@
 const UserProblemState = require('../models/UserProblemState');
+const mongoose = require('mongoose');
 
 class UserProblemStateRepository {
   async create(stateData) {
@@ -8,6 +9,10 @@ class UserProblemStateRepository {
 
   async findByUserAndProblem(userId, problemId) {
     return await UserProblemState.findOne({ userId, problemId });
+  }
+
+  async findByProblem(problemId) {
+    return await UserProblemState.find({ problemId });
   }
 
   async findById(stateId) {
@@ -121,6 +126,13 @@ class UserProblemStateRepository {
 
   async countByUser(userId) {
     return await UserProblemState.countDocuments({ userId });
+  }
+
+  async countGroupByStatus(userId) {
+    return await UserProblemState.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
   }
 }
 

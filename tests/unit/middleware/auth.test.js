@@ -21,7 +21,7 @@ describe('auth middleware', () => {
   describe('token validation', () => {
     it('should pass valid token and set req.userId and req.email', () => {
       const mockToken = 'valid-token';
-      const mockDecoded = { userId: 'user123', email: 'test@example.com' };
+      const mockDecoded = { userId: 'user123', email: 'test@example.com', role: 'user' };
 
       req.header.mockReturnValue(`Bearer ${mockToken}`);
       jwt.verify.mockReturnValue(mockDecoded);
@@ -32,6 +32,7 @@ describe('auth middleware', () => {
       expect(jwt.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET);
       expect(req.userId).toBe('user123');
       expect(req.email).toBe('test@example.com');
+      expect(req.userRole).toBe('user');
       expect(next).toHaveBeenCalled();
     });
 
@@ -62,7 +63,7 @@ describe('auth middleware', () => {
 
     it('should handle token without Bearer prefix', () => {
       const mockToken = 'valid-token';
-      const mockDecoded = { userId: 'user123', email: 'test@example.com' };
+      const mockDecoded = { userId: 'user123', email: 'test@example.com', role: 'admin' };
 
       req.header.mockReturnValue(mockToken);
       jwt.verify.mockReturnValue(mockDecoded);
@@ -73,6 +74,7 @@ describe('auth middleware', () => {
       expect(jwt.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET);
       expect(req.userId).toBe('user123');
       expect(req.email).toBe('test@example.com');
+      expect(req.userRole).toBe('admin');
       expect(next).toHaveBeenCalled();
     });
 

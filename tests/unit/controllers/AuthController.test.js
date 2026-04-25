@@ -127,21 +127,17 @@ describe('AuthController', () => {
 
   describe('getProfile', () => {
     it('should get user profile', async () => {
-      const mockStats = { totalReviews: 10, streak: 5, lastActiveDate: new Date() };
-      userService.getUserStats.mockResolvedValue(mockStats);
+      const mockUser = { _id: 'user123', email: 'test@example.com', name: 'Test User' };
+      userService.getUserById.mockResolvedValue(mockUser);
 
       await authController.getProfile(req, res, next);
 
-      expect(userService.getUserStats).toHaveBeenCalledWith('user123');
-      expect(res.json).toHaveBeenCalledWith({
-        userId: 'user123',
-        email: 'test@example.com',
-        stats: mockStats
-      });
+      expect(userService.getUserById).toHaveBeenCalledWith('user123');
+      expect(res.json).toHaveBeenCalledWith(mockUser);
     });
 
     it('should forward errors to error handler', async () => {
-      userService.getUserStats.mockRejectedValue(new Error('User not found'));
+      userService.getUserById.mockRejectedValue(new Error('User not found'));
 
       await authController.getProfile(req, res, next);
 
@@ -154,38 +150,18 @@ describe('AuthController', () => {
       req.body = { name: 'Updated Name' };
 
       const mockUser = { _id: 'user123', name: 'Updated Name' };
-      userService.updateUser.mockResolvedValue(mockUser);
+      userService.updateProfile.mockResolvedValue(mockUser);
 
       await authController.updateProfile(req, res, next);
 
-      expect(userService.updateUser).toHaveBeenCalledWith('user123', req.body);
+      expect(userService.updateProfile).toHaveBeenCalledWith('user123', req.body);
       expect(res.json).toHaveBeenCalledWith(mockUser);
     });
 
     it('should forward errors to error handler', async () => {
-      userService.updateUser.mockRejectedValue(new Error('User not found'));
+      userService.updateProfile.mockRejectedValue(new Error('User not found'));
 
       await authController.updateProfile(req, res, next);
-
-      expect(next).toHaveBeenCalledWith(expect.any(Error));
-    });
-  });
-
-  describe('getStats', () => {
-    it('should get user stats', async () => {
-      const mockStats = { totalReviews: 10, streak: 5, lastActiveDate: new Date() };
-      userService.getUserStats.mockResolvedValue(mockStats);
-
-      await authController.getStats(req, res, next);
-
-      expect(userService.getUserStats).toHaveBeenCalledWith('user123');
-      expect(res.json).toHaveBeenCalledWith(mockStats);
-    });
-
-    it('should forward errors to error handler', async () => {
-      userService.getUserStats.mockRejectedValue(new Error('User not found'));
-
-      await authController.getStats(req, res, next);
 
       expect(next).toHaveBeenCalledWith(expect.any(Error));
     });

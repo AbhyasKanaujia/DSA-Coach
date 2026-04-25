@@ -101,7 +101,7 @@ describe('UserService', () => {
 
       expect(bcrypt.compare).toHaveBeenCalledWith('password123', 'hashedPassword');
       expect(jwt.sign).toHaveBeenCalledWith(
-        { userId: 'user123' },
+        { userId: 'user123', role: undefined },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );

@@ -1,0 +1,47 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+  tags: [
+    auth
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('authToken', res.body.token);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('token');
+    expect(response.body).to.have.property('user');
+    expect(response.body.token).to.be.a('string');
+  }
+}
+
+docs {
+  Login with email and password. Returns a JWT token and user object.
+
+  The token is saved to authToken env var for subsequent authenticated requests.
+}

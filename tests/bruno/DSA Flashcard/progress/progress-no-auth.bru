@@ -1,0 +1,26 @@
+meta {
+  name: Progress - No Auth
+  type: http
+  seq: 2
+  tags: [
+    progress
+    auth
+    error
+  ]
+}
+
+get {
+  url: {{baseUrl}}/progress
+  body: none
+  auth: none
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(401);
+  }
+}
+
+docs {
+  Accessing progress without a token should return 401 Unauthorized.
+}
