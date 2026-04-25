@@ -1,0 +1,31 @@
+meta {
+  name: Delete Problem
+  type: http
+  seq: 7
+  tags: [
+    problems
+    admin
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/problems/{{problemId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('success');
+    expect(response.body.success).to.equal(true);
+  }
+}
+
+docs {
+  Delete a problem and its content. Admin only. Also removes from all collections.
+}

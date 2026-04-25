@@ -1,0 +1,27 @@
+meta {
+  name: Get Problem
+  type: http
+  seq: 4
+  tags: [
+    problems
+  ]
+}
+
+get {
+  url: {{baseUrl}}/problems/{{problemId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('id');
+    expect(response.body).to.have.property('title');
+    expect(response.body).to.have.property('solutions');
+  }
+}
+
+docs {
+  Get a single problem with full details including solutions. Any authenticated user.
+}

@@ -13,17 +13,17 @@ class SessionController {
 
   async submitReview(req, res, next) {
     try {
-      const { cardId, quality } = req.body;
+      const { problemId, quality } = req.body;
 
-      if (!cardId || !quality) {
-        return res.status(400).json({ error: 'cardId and quality are required' });
+      if (!problemId || !quality) {
+        return res.status(400).json({ error: 'problemId and quality are required' });
       }
 
-      if (!['easy', 'medium', 'hard'].includes(quality)) {
-        return res.status(400).json({ error: 'quality must be easy, medium, or hard' });
+      if (!['again', 'hard', 'easy'].includes(quality)) {
+        return res.status(400).json({ error: 'quality must be again, hard, or easy' });
       }
 
-      const result = await sessionService.submitReview(cardId, req.userId, quality);
+      const result = await sessionService.submitReview(problemId, req.userId, quality);
       res.json(result);
     } catch (error) {
       next(error);

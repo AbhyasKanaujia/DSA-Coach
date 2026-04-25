@@ -44,6 +44,21 @@ class ProblemRepository {
   async findByIds(problemIds) {
     return await Problem.find({ _id: { $in: problemIds } });
   }
+
+  async findByCompany(company) {
+    return await Problem.find({ companies: company })
+      .sort({ createdAt: -1 });
+  }
+
+  async findByTags(tags) {
+    return await Problem.find({ tags: { $in: tags } })
+      .sort({ createdAt: -1 });
+  }
+
+  async existsBySource(source, sourceId) {
+    const count = await Problem.countDocuments({ source, sourceId });
+    return count > 0;
+  }
 }
 
 module.exports = new ProblemRepository();

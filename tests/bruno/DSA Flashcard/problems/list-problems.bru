@@ -1,0 +1,29 @@
+meta {
+  name: List Problems
+  type: http
+  seq: 3
+  tags: [
+    problems
+  ]
+}
+
+get {
+  url: {{baseUrl}}/problems
+  body: none
+  auth: inherit
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('problems');
+    expect(response.body).to.have.property('total');
+    expect(response.body).to.have.property('page');
+  }
+}
+
+docs {
+  List all problems. Available to any authenticated user.
+
+  Query params: difficulty, tags, companies, search, page, limit
+}

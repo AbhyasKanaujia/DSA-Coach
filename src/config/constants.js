@@ -4,8 +4,8 @@ module.exports = {
     MIN_EASE_FACTOR: 1.3,
     QUALITY_MAP: {
       easy: 5,
-      medium: 3,
-      hard: 1
+      hard: 3,
+      again: 1
     },
     INTERVALS: [1, 6]
   },

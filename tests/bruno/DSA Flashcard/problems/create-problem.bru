@@ -1,0 +1,60 @@
+meta {
+  name: Create Problem
+  type: http
+  seq: 2
+  tags: [
+    problems
+    admin
+  ]
+}
+
+post {
+  url: {{baseUrl}}/problems
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Two Sum",
+    "description": "Given an array of integers, return indices of the two numbers that add up to target.",
+    "difficulty": "easy",
+    "tags": ["array", "hash-table"],
+    "companies": ["google", "amazon"],
+    "source": "leetcode",
+    "sourceId": "1",
+    "solutions": [
+      {
+        "name": "Hash Map Approach",
+        "intuition": "Use a hash map to store complements",
+        "steps": ["Iterate through array", "Check if complement exists"],
+        "codeSnippets": [{"language": "python", "code": "def twoSum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        if target - num in seen:\n            return [seen[target - num], i]\n        seen[num] = i"}],
+        "timeComplexity": "O(n)",
+        "spaceComplexity": "O(n)"
+      }
+    ]
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(201);
+    expect(response.body).to.have.property('id');
+    expect(response.body).to.have.property('title');
+    bru.setEnvVar('problemId', response.body.id);
+  }
+}
+
+docs {
+  Create a new problem. Admin only.
+
+  Returns the created problem with solutions.
+}

@@ -1,7 +1,9 @@
 const request = require('supertest');
 const app = require('../../../src/app');
 const User = require('../../../src/models/User');
-const Card = require('../../../src/models/Card');
+const Problem = require('../../../src/models/Problem');
+const ProblemContent = require('../../../src/models/ProblemContent');
+const UserProblemState = require('../../../src/models/UserProblemState');
 
 describe('Sessions API Integration Tests', () => {
   let token;
@@ -28,70 +30,105 @@ describe('Sessions API Integration Tests', () => {
   });
 
   describe('GET /api/sessions', () => {
+    let problem1, problem2, problem3;
+
     beforeEach(async () => {
       const now = new Date();
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
 
-      await Card.create({
-        userId,
-        questionName: 'Due Card 1',
-        category: 'Array',
+      problem1 = await Problem.create({
+        title: 'Two Sum',
+        description: 'Find two numbers that add up to target',
         difficulty: 'easy',
-        dueDate: yesterday,
+        source: 'leetcode',
+        sourceId: '1',
+        createdBy: userId
+      });
+
+      await ProblemContent.create({
+        problemId: problem1._id,
         solutions: [{
-          name: 'Solution 1',
-          approachOrder: 0,
-          intuition: 'Test',
+          name: 'Hash Map',
+          order: 0,
+          intuition: 'Use a hash map',
           steps: [],
-          code: { language: 'js', snippet: 'code' },
+          codeSnippets: [],
           timeComplexity: 'O(n)',
-          spaceComplexity: 'O(1)'
+          spaceComplexity: 'O(n)'
         }]
       });
 
-      await Card.create({
+      await UserProblemState.create({
         userId,
-        questionName: 'Due Card 2',
-        category: 'String',
+        problemId: problem1._id,
+        nextReviewAt: yesterday
+      });
+
+      problem2 = await Problem.create({
+        title: 'Binary Search',
+        description: 'Search in sorted array',
         difficulty: 'medium',
-        dueDate: yesterday,
+        source: 'leetcode',
+        sourceId: '2',
+        createdBy: userId
+      });
+
+      await ProblemContent.create({
+        problemId: problem2._id,
         solutions: [{
-          name: 'Solution 1',
-          approachOrder: 0,
-          intuition: 'Test',
+          name: 'Binary Search',
+          order: 0,
+          intuition: 'Divide and conquer',
           steps: [],
-          code: { language: 'js', snippet: 'code' },
-          timeComplexity: 'O(n)',
+          codeSnippets: [],
+          timeComplexity: 'O(log n)',
           spaceComplexity: 'O(1)'
         }]
       });
 
-      await Card.create({
+      await UserProblemState.create({
         userId,
-        questionName: 'Future Card',
-        category: 'Tree',
+        problemId: problem2._id,
+        nextReviewAt: yesterday
+      });
+
+      problem3 = await Problem.create({
+        title: 'Merge Sort',
+        description: 'Sort array',
         difficulty: 'hard',
-        dueDate: new Date(now.getTime() + 86400000),
+        source: 'leetcode',
+        sourceId: '3',
+        createdBy: userId
+      });
+
+      await ProblemContent.create({
+        problemId: problem3._id,
         solutions: [{
-          name: 'Solution 1',
-          approachOrder: 0,
-          intuition: 'Test',
+          name: 'Merge Sort',
+          order: 0,
+          intuition: 'Divide and merge',
           steps: [],
-          code: { language: 'js', snippet: 'code' },
-          timeComplexity: 'O(n)',
-          spaceComplexity: 'O(1)'
+          codeSnippets: [],
+          timeComplexity: 'O(n log n)',
+          spaceComplexity: 'O(n)'
         }]
+      });
+
+      await UserProblemState.create({
+        userId,
+        problemId: problem3._id,
+        nextReviewAt: new Date(now.getTime() + 86400000)
       });
     });
 
-    it('should get due cards for session', async () => {
+    it('should get due problems for session', async () => {
       const response = await request(app)
         .get('/api/sessions')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.cards).toHaveLength(2);
+      expect(response.body.problems).toHaveLength(2);
       expect(response.body.count).toBe(2);
       expect(response.body.totalDue).toBe(2);
     });
@@ -102,19 +139,19 @@ describe('Sessions API Integration Tests', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.cards).toHaveLength(1);
+      expect(response.body.problems).toHaveLength(1);
       expect(response.body.totalDue).toBe(2);
     });
 
-    it('should return empty session when no cards are due', async () => {
-      await Card.deleteMany({ userId });
+    it('should return empty session when no problems are due', async () => {
+      await UserProblemState.deleteMany({ userId });
 
       const response = await request(app)
         .get('/api/sessions')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.cards).toHaveLength(0);
+      expect(response.body.problems).toHaveLength(0);
       expect(response.body.count).toBe(0);
       expect(response.body.totalDue).toBe(0);
     });
@@ -128,33 +165,45 @@ describe('Sessions API Integration Tests', () => {
   });
 
   describe('POST /api/sessions/review', () => {
-    let cardId;
+    let problemId;
 
     beforeEach(async () => {
       const now = new Date();
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
 
-      const card = await Card.create({
-        userId,
-        questionName: 'Review Card',
-        category: 'Array',
+      const problem = await Problem.create({
+        title: 'Two Sum',
+        description: 'Find two numbers that add up to target',
         difficulty: 'easy',
-        dueDate: yesterday,
-        easeFactor: 2.5,
-        interval: 0,
-        repetition: 0,
+        source: 'leetcode',
+        sourceId: '1',
+        createdBy: userId
+      });
+
+      await ProblemContent.create({
+        problemId: problem._id,
         solutions: [{
-          name: 'Solution 1',
-          approachOrder: 0,
-          intuition: 'Test',
+          name: 'Hash Map',
+          order: 0,
+          intuition: 'Use a hash map',
           steps: [],
-          code: { language: 'js', snippet: 'code' },
+          codeSnippets: [],
           timeComplexity: 'O(n)',
-          spaceComplexity: 'O(1)'
+          spaceComplexity: 'O(n)'
         }]
       });
-      cardId = card._id;
+
+      await UserProblemState.create({
+        userId,
+        problemId: problem._id,
+        nextReviewAt: yesterday,
+        easeFactor: 2.5,
+        interval: 0,
+        repetitions: 0
+      });
+
+      problemId = problem._id;
     });
 
     it('should submit review with easy quality', async () => {
@@ -162,29 +211,15 @@ describe('Sessions API Integration Tests', () => {
         .post('/api/sessions/review')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          cardId: cardId.toString(),
+          problemId: problemId.toString(),
           quality: 'easy'
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.card).toBeDefined();
+      expect(response.body.state).toBeDefined();
       expect(response.body.nextDue).toBeDefined();
       expect(response.body.easeFactor).toBeGreaterThan(2.5);
       expect(response.body.interval).toBe(1);
-    });
-
-    it('should submit review with medium quality', async () => {
-      const response = await request(app)
-        .post('/api/sessions/review')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          cardId: cardId.toString(),
-          quality: 'medium'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.card).toBeDefined();
-      expect(response.body.nextDue).toBeDefined();
     });
 
     it('should submit review with hard quality', async () => {
@@ -192,17 +227,31 @@ describe('Sessions API Integration Tests', () => {
         .post('/api/sessions/review')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          cardId: cardId.toString(),
+          problemId: problemId.toString(),
           quality: 'hard'
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.card).toBeDefined();
+      expect(response.body.state).toBeDefined();
+      expect(response.body.nextDue).toBeDefined();
+    });
+
+    it('should submit review with again quality', async () => {
+      const response = await request(app)
+        .post('/api/sessions/review')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          problemId: problemId.toString(),
+          quality: 'again'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.state).toBeDefined();
       expect(response.body.nextDue).toBeDefined();
       expect(response.body.easeFactor).toBeLessThanOrEqual(2.5);
     });
 
-    it('should return 400 if cardId is missing', async () => {
+    it('should return 400 if problemId is missing', async () => {
       const response = await request(app)
         .post('/api/sessions/review')
         .set('Authorization', `Bearer ${token}`)
@@ -219,7 +268,7 @@ describe('Sessions API Integration Tests', () => {
         .post('/api/sessions/review')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          cardId: cardId.toString()
+          problemId: problemId.toString()
         });
 
       expect(response.status).toBe(400);
@@ -231,7 +280,7 @@ describe('Sessions API Integration Tests', () => {
         .post('/api/sessions/review')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          cardId: cardId.toString(),
+          problemId: problemId.toString(),
           quality: 'invalid'
         });
 
@@ -239,12 +288,12 @@ describe('Sessions API Integration Tests', () => {
       expect(response.body.error).toContain('quality');
     });
 
-    it('should return 404 for non-existing card', async () => {
+    it('should return 404 for non-existing problem state', async () => {
       const response = await request(app)
         .post('/api/sessions/review')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          cardId: '507f1f77bcf86cd799439011',
+          problemId: '507f1f77bcf86cd799439011',
           quality: 'easy'
         });
 
@@ -255,7 +304,7 @@ describe('Sessions API Integration Tests', () => {
       const response = await request(app)
         .post('/api/sessions/review')
         .send({
-          cardId: cardId.toString(),
+          problemId: problemId.toString(),
           quality: 'easy'
         });
 

@@ -5,24 +5,24 @@ describe('SpacedRepetitionService', () => {
     const mockCard = {
       easeFactor: 2.5,
       interval: 0,
-      repetition: 0,
+      repetitions: 0,
       lapseCount: 0
     };
 
     describe('quality mapping', () => {
       it('should map easy to quality 5', () => {
         const result = spacedRepetitionService.reviewCard(mockCard, 'easy');
-        expect(result.lastQuality).toBe(5);
+        expect(result.lastResult).toBe('easy');
       });
 
-      it('should map medium to quality 3', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'medium');
-        expect(result.lastQuality).toBe(3);
-      });
-
-      it('should map hard to quality 1', () => {
+      it('should map hard to quality 3', () => {
         const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
-        expect(result.lastQuality).toBe(1);
+        expect(result.lastResult).toBe('hard');
+      });
+
+      it('should map again to quality 1', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'again');
+        expect(result.lastResult).toBe('again');
       });
 
       it('should throw error for invalid quality', () => {
@@ -38,19 +38,19 @@ describe('SpacedRepetitionService', () => {
         expect(result.easeFactor).toBeGreaterThan(2.5);
       });
 
-      it('should decrease ease factor for hard reviews', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
+      it('should decrease ease factor for again reviews', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'again');
         expect(result.easeFactor).toBeLessThanOrEqual(2.5);
       });
 
       it('should clamp ease factor to minimum 1.3', () => {
         const lowEFCard = { ...mockCard, easeFactor: 1.35 };
-        const result = spacedRepetitionService.reviewCard(lowEFCard, 'hard');
+        const result = spacedRepetitionService.reviewCard(lowEFCard, 'again');
         expect(result.easeFactor).toBeGreaterThanOrEqual(1.3);
       });
 
-      it('should calculate ease factor correctly for medium reviews', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'medium');
+      it('should calculate ease factor correctly for hard reviews', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
         expect(result.easeFactor).toBeCloseTo(2.36, 1);
       });
     });
@@ -62,37 +62,37 @@ describe('SpacedRepetitionService', () => {
       });
 
       it('should set interval to 6 for second successful review', () => {
-        const cardWithOneRep = { ...mockCard, repetition: 1 };
+        const cardWithOneRep = { ...mockCard, repetitions: 1 };
         const result = spacedRepetitionService.reviewCard(cardWithOneRep, 'easy');
         expect(result.interval).toBe(6);
       });
 
       it('should multiply interval by ease factor for subsequent reviews', () => {
-        const cardWithTwoReps = { ...mockCard, repetition: 2, interval: 6, easeFactor: 2.5 };
+        const cardWithTwoReps = { ...mockCard, repetitions: 2, interval: 6, easeFactor: 2.5 };
         const result = spacedRepetitionService.reviewCard(cardWithTwoReps, 'easy');
         expect(result.interval).toBe(16);
       });
     });
 
     describe('lapse behavior', () => {
-      it('should reset repetition to 0 for quality < 3', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
-        expect(result.repetition).toBe(0);
+      it('should reset repetitions to 0 for again (quality < 3)', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'again');
+        expect(result.repetitions).toBe(0);
       });
 
-      it('should reset interval to 1 for quality < 3', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
+      it('should reset interval to 1 for again (quality < 3)', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'again');
         expect(result.interval).toBe(1);
       });
 
-      it('should increment lapse count for quality < 3', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
+      it('should increment lapse count for again (quality < 3)', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'again');
         expect(result.lapseCount).toBe(1);
       });
 
-      it('should increment repetition for quality >= 3', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'medium');
-        expect(result.repetition).toBe(1);
+      it('should increment repetitions for hard (quality >= 3)', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
+        expect(result.repetitions).toBe(1);
       });
     });
 
@@ -101,33 +101,33 @@ describe('SpacedRepetitionService', () => {
         const result = spacedRepetitionService.reviewCard(mockCard, 'easy');
         const expectedDue = new Date();
         expectedDue.setDate(expectedDue.getDate() + 1);
-        expect(result.dueDate.toDateString()).toBe(expectedDue.toDateString());
+        expect(result.nextReviewAt.toDateString()).toBe(expectedDue.toDateString());
       });
 
-      it('should set lastReviewed to current time', () => {
+      it('should set lastReviewedAt to current time', () => {
         const before = new Date();
         const result = spacedRepetitionService.reviewCard(mockCard, 'easy');
         const after = new Date();
-        expect(result.lastReviewed).toBeInstanceOf(Date);
-        expect(result.lastReviewed.getTime()).toBeGreaterThanOrEqual(before.getTime());
-        expect(result.lastReviewed.getTime()).toBeLessThanOrEqual(after.getTime());
+        expect(result.lastReviewedAt).toBeInstanceOf(Date);
+        expect(result.lastReviewedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+        expect(result.lastReviewedAt.getTime()).toBeLessThanOrEqual(after.getTime());
       });
     });
 
     describe('edge cases', () => {
-      it('should handle quality = 3 boundary', () => {
-        const result = spacedRepetitionService.reviewCard(mockCard, 'medium');
-        expect(result.repetition).toBe(1);
+      it('should handle quality = 3 boundary (hard)', () => {
+        const result = spacedRepetitionService.reviewCard(mockCard, 'hard');
+        expect(result.repetitions).toBe(1);
         expect(result.lapseCount).toBe(0);
       });
 
-      it('should handle multiple consecutive hard reviews', () => {
+      it('should handle multiple consecutive again reviews', () => {
         let card = { ...mockCard };
         for (let i = 0; i < 5; i++) {
-          card = spacedRepetitionService.reviewCard(card, 'hard');
+          card = spacedRepetitionService.reviewCard(card, 'again');
         }
         expect(card.lapseCount).toBe(5);
-        expect(card.repetition).toBe(0);
+        expect(card.repetitions).toBe(0);
       });
 
       it('should handle multiple consecutive easy reviews', () => {
@@ -135,7 +135,7 @@ describe('SpacedRepetitionService', () => {
         for (let i = 0; i < 5; i++) {
           card = spacedRepetitionService.reviewCard(card, 'easy');
         }
-        expect(card.repetition).toBe(5);
+        expect(card.repetitions).toBe(5);
         expect(card.lapseCount).toBe(0);
         expect(card.easeFactor).toBeGreaterThan(2.5);
       });
@@ -148,20 +148,20 @@ describe('SpacedRepetitionService', () => {
       expect(result).toEqual({
         easeFactor: 2.5,
         interval: 0,
-        repetition: 0,
-        dueDate: expect.any(Date),
-        lastReviewed: null,
-        lastQuality: null,
+        repetitions: 0,
+        nextReviewAt: expect.any(Date),
+        lastReviewedAt: null,
+        lastResult: null,
         lapseCount: 0
       });
     });
 
-    it('should set dueDate to current time', () => {
+    it('should set nextReviewAt to current time', () => {
       const before = new Date();
       const result = spacedRepetitionService.initializeSR();
       const after = new Date();
-      expect(result.dueDate.getTime()).toBeGreaterThanOrEqual(before.getTime());
-      expect(result.dueDate.getTime()).toBeLessThanOrEqual(after.getTime());
+      expect(result.nextReviewAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(result.nextReviewAt.getTime()).toBeLessThanOrEqual(after.getTime());
     });
   });
 });

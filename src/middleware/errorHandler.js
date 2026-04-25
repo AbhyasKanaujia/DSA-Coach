@@ -6,7 +6,11 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (err.statusCode) {
-    return res.status(err.statusCode).json({ error: err.message });
+    const response = { error: err.message };
+    if (err.field) {
+      response.field = err.field;
+    }
+    return res.status(err.statusCode).json(response);
   }
 
   if (err.name === 'ValidationError') {

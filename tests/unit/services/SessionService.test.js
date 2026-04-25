@@ -1,10 +1,10 @@
 const sessionService = require('../../../src/services/SessionService');
-const cardRepository = require('../../../src/repositories/CardRepository');
-const userService = require('../../../src/services/UserService');
+const userProblemStateRepository = require('../../../src/repositories/UserProblemStateRepository');
+const statsService = require('../../../src/services/StatsService');
 const spacedRepetitionService = require('../../../src/services/SpacedRepetitionService');
 
-jest.mock('../../../src/repositories/CardRepository');
-jest.mock('../../../src/services/UserService');
+jest.mock('../../../src/repositories/UserProblemStateRepository');
+jest.mock('../../../src/services/StatsService');
 jest.mock('../../../src/services/SpacedRepetitionService');
 
 describe('SessionService', () => {
@@ -14,31 +14,31 @@ describe('SessionService', () => {
 
   describe('getSession', () => {
     it('should get session with default limit of 10', async () => {
-      const mockCards = [{ _id: 'card1' }, { _id: 'card2' }];
-      cardRepository.findDueCards.mockResolvedValue(mockCards);
-      cardRepository.countDueCards.mockResolvedValue(2);
+      const mockProblems = [{ _id: 'problem1' }, { _id: 'problem2' }];
+      userProblemStateRepository.findDueProblems.mockResolvedValue(mockProblems);
+      userProblemStateRepository.countDueProblems.mockResolvedValue(2);
 
       const result = await sessionService.getSession('user123');
 
-      expect(cardRepository.findDueCards).toHaveBeenCalledWith('user123', expect.any(Date), 10);
-      expect(cardRepository.countDueCards).toHaveBeenCalledWith('user123', expect.any(Date));
+      expect(userProblemStateRepository.findDueProblems).toHaveBeenCalledWith('user123', expect.any(Date), 10);
+      expect(userProblemStateRepository.countDueProblems).toHaveBeenCalledWith('user123', expect.any(Date));
       expect(result).toEqual({
-        cards: mockCards,
+        problems: mockProblems,
         count: 2,
         totalDue: 2
       });
     });
 
     it('should get session with custom limit', async () => {
-      const mockCards = [{ _id: 'card1' }];
-      cardRepository.findDueCards.mockResolvedValue(mockCards);
-      cardRepository.countDueCards.mockResolvedValue(1);
+      const mockProblems = [{ _id: 'problem1' }];
+      userProblemStateRepository.findDueProblems.mockResolvedValue(mockProblems);
+      userProblemStateRepository.countDueProblems.mockResolvedValue(1);
 
       const result = await sessionService.getSession('user123', 5);
 
-      expect(cardRepository.findDueCards).toHaveBeenCalledWith('user123', expect.any(Date), 5);
+      expect(userProblemStateRepository.findDueProblems).toHaveBeenCalledWith('user123', expect.any(Date), 5);
       expect(result).toEqual({
-        cards: mockCards,
+        problems: mockProblems,
         count: 1,
         totalDue: 1
       });
@@ -47,48 +47,71 @@ describe('SessionService', () => {
 
   describe('submitReview', () => {
     it('should submit review and update stats', async () => {
-      const mockCard = {
-        _id: 'card123',
+      const mockState = {
+        _id: 'state123',
         easeFactor: 2.5,
         interval: 0,
-        repetition: 0
+        repetitions: 0
       };
 
       const mockSRUpdates = {
         easeFactor: 2.6,
         interval: 1,
-        repetition: 1,
-        dueDate: new Date(),
-        lastReviewed: new Date(),
-        lastQuality: 5
+        repetitions: 1,
+        nextReviewAt: new Date(),
+        lastReviewedAt: new Date(),
+        lastResult: 'easy'
       };
 
-      const mockUpdatedCard = { ...mockCard, ...mockSRUpdates };
+      const mockUpdatedState = { ...mockState, ...mockSRUpdates };
 
-      cardRepository.findById.mockResolvedValue(mockCard);
+      userProblemStateRepository.findByUserAndProblem.mockResolvedValue(mockState);
       spacedRepetitionService.reviewCard.mockReturnValue(mockSRUpdates);
-      cardRepository.updateSR.mockResolvedValue(mockUpdatedCard);
-      userService.updateStatsOnReview.mockResolvedValue({ totalReviews: 1, streak: 1 });
+      userProblemStateRepository.updateSR.mockResolvedValue(mockUpdatedState);
+      statsService.updateStatsOnReview.mockResolvedValue({ totalReviews: 1, streak: 1 });
 
-      const result = await sessionService.submitReview('card123', 'user123', 'easy');
+      const result = await sessionService.submitReview('problem123', 'user123', 'easy');
 
-      expect(spacedRepetitionService.reviewCard).toHaveBeenCalledWith(mockCard, 'easy');
-      expect(cardRepository.updateSR).toHaveBeenCalledWith('card123', 'user123', mockSRUpdates);
-      expect(userService.updateStatsOnReview).toHaveBeenCalledWith('user123');
+      expect(spacedRepetitionService.reviewCard).toHaveBeenCalledWith(mockState, 'easy');
+      expect(userProblemStateRepository.updateSR).toHaveBeenCalledWith('user123', 'problem123', mockSRUpdates);
+      expect(statsService.updateStatsOnReview).toHaveBeenCalledWith('user123');
       expect(result).toEqual({
-        card: mockUpdatedCard,
-        nextDue: mockUpdatedCard.dueDate,
-        easeFactor: mockUpdatedCard.easeFactor,
-        interval: mockUpdatedCard.interval
+        state: mockUpdatedState,
+        nextDue: mockUpdatedState.nextReviewAt,
+        easeFactor: mockUpdatedState.easeFactor,
+        interval: mockUpdatedState.interval
       });
     });
 
-    it('should throw error if card not found', async () => {
-      cardRepository.findById.mockResolvedValue(null);
+    it('should submit review with again quality', async () => {
+      const mockState = { _id: 'state123', easeFactor: 2.5, interval: 6, repetitions: 3 };
+      const mockSRUpdates = {
+        easeFactor: 2.3,
+        interval: 1,
+        repetitions: 0,
+        nextReviewAt: new Date(),
+        lastReviewedAt: new Date(),
+        lastResult: 'again'
+      };
+      const mockUpdatedState = { ...mockState, ...mockSRUpdates };
+
+      userProblemStateRepository.findByUserAndProblem.mockResolvedValue(mockState);
+      spacedRepetitionService.reviewCard.mockReturnValue(mockSRUpdates);
+      userProblemStateRepository.updateSR.mockResolvedValue(mockUpdatedState);
+      statsService.updateStatsOnReview.mockResolvedValue({ totalReviews: 1, streak: 1 });
+
+      const result = await sessionService.submitReview('problem123', 'user123', 'again');
+
+      expect(spacedRepetitionService.reviewCard).toHaveBeenCalledWith(mockState, 'again');
+      expect(result.state.lastResult).toBe('again');
+    });
+
+    it('should throw error if problem state not found', async () => {
+      userProblemStateRepository.findByUserAndProblem.mockResolvedValue(null);
 
       await expect(
-        sessionService.submitReview('card123', 'user123', 'easy')
-      ).rejects.toThrow('Card not found');
+        sessionService.submitReview('problem123', 'user123', 'easy')
+      ).rejects.toThrow('Problem state not found');
     });
   });
 });

@@ -1,0 +1,41 @@
+meta {
+  name: Create Problem - Non Admin Forbidden
+  type: http
+  seq: 8
+  tags: [
+    problems
+    auth
+    error
+  ]
+}
+
+post {
+  url: {{baseUrl}}/problems
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Should Not Create",
+    "description": "This should fail",
+    "difficulty": "easy",
+    "source": "test",
+    "sourceId": "forbidden",
+    "solutions": [{"name": "x", "intuition": "x", "steps": [], "codeSnippets": [{"language": "python", "code": "1"}], "timeComplexity": "O(1)", "spaceComplexity": "O(1)"}]
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(403);
+  }
+}
+
+docs {
+  Non-admin users should get 403 Forbidden when trying to create problems.
+}

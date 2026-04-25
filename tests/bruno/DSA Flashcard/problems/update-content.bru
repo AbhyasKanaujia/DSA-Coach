@@ -1,0 +1,50 @@
+meta {
+  name: Update Problem Content
+  type: http
+  seq: 6
+  tags: [
+    problems
+    admin
+  ]
+}
+
+put {
+  url: {{baseUrl}}/problems/{{problemId}}/content
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "solutions": [
+      {
+        "name": "Brute Force",
+        "intuition": "Check every pair",
+        "steps": ["Nested loop through array"],
+        "codeSnippets": [{"language": "python", "code": "for i in range(len(nums)):\n    for j in range(i+1, len(nums)):\n        if nums[i] + nums[j] == target:\n            return [i, j]"}],
+        "timeComplexity": "O(n^2)",
+        "spaceComplexity": "O(1)"
+      }
+    ]
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('solutions');
+    expect(response.body).to.have.property('version');
+  }
+}
+
+docs {
+  Update problem solutions/content. Admin only. Version is incremented on each update.
+}
