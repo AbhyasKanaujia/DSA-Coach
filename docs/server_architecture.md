@@ -1,270 +1,260 @@
-# DSA Flashcard Backend
+# Server Architecture
 
-## Product Overview
+## Introduction
 
-This application is a backend system for a DSA (Data Structures & Algorithms) learning platform.
+The DSA Flashcard server is a Node.js and Express-based REST API that implements a spaced repetition learning platform for Data Structures and Algorithms. It uses MongoDB for persistence and follows a layered repository pattern to maintain clean separation of concerns between API routing, business logic, and data access layers.
 
-It allows users to:
-- Create and manage structured flashcards for coding problems
-- Store multiple solutions per problem (from brute force → optimal)
-- Practice using spaced repetition to improve long-term retention
-- Track learning progress, streaks, and review history
+## Core Vision & MVP Scope
 
-Each flashcard is not just a question-answer pair, but a **learning unit**:
-- A problem (e.g., "Two Sum")
-- Multiple solution approaches (intuition, steps, code, complexity)
-- A learning state powered by a spaced repetition algorithm (SM-2)
+**Current Phase**: Admin-managed collections with curated DSA sheets (Neetcode 150, Striver A-to-Z, etc.). Users subscribe to collections and review problems via spaced repetition.
 
-The system automatically schedules revision sessions based on user performance (easy/medium/hard),
-ensuring efficient and personalized learning over time.
+**Future Extension**: Community contributions and collection management once user adoption is validated.
+
+**Key Design Principles**:
+
+- Collections as first-class entities (users select which sheets to study)
+- Problems can belong to multiple collections (shared across sheets)
+- User contributions (new problems) initially limited to admin; later extendable to community
+- Start simple, avoid Wikipedia-like complexity (approvals, forks, ownership disputes)
+- Filter by company tag within activated collections
+- Track user progress per problem independent of collection context
 
 ## Architecture Overview
 
-The system follows a layered architecture:
-
-Routes → Controllers → Services → Repositories → Database
-
-Each layer has a single responsibility:
-- **Routes**: define endpoints and URL structure
-- **Controllers**: handle request/response, validation, authentication
-- **Services**: business logic, orchestration, no HTTP/DB specifics
-- **Repositories**: pure database access, no business logic
-- **Database**: MongoDB with Mongoose ODM
-
-The architecture is designed to separate learning logic (spaced repetition, session generation)
-from infrastructure (HTTP, database), making the system scalable and testable.
-
-## Request Flow
-
 ```mermaid
 graph TD
-    Client[Client] -->|HTTP Request| Routes[Routes]
-    Routes -->|Parsed Request| Controllers[Controllers]
-    Controllers -->|Validated Data| Services[Services]
-    Services -->|Query/Update| Repositories[Repositories]
-    Repositories -->|CRUD Operations| MongoDB[MongoDB]
+    Client["Client Requests"]
+    Routes["Routes<br/>(API Endpoints)"]
+    Controllers["Controllers<br/>(Request Handlers)"]
+    Validators["Validators<br/>(Input Validation)"]
+    Services["Services<br/>(Business Logic)"]
+    Repos["Repositories<br/>(Data Access)"]
+    Models["Models<br/>(Schemas)"]
+    DB["MongoDB"]
 
-    Services -->|Calculate SR| SpacedRepetitionService[SpacedRepetitionService]
-    SpacedRepetitionService -->|SR Fields| Services
+    Client --> Routes
+    Routes --> Controllers
+    Controllers --> Validators
+    Validators --> Services
+    Services --> Repos
+    Repos --> Models
+    Models --> DB
 ```
 
-## Project Structure
+## Layer Responsibilities & Best Practices
 
-```
-src/
-├── config/
-│   ├── constants.js          # SR algorithm constants, JWT config
-│   └── database.js           # MongoDB connection setup
-├── controllers/
-│   ├── AuthController.js     # User auth, profile, stats
-│   ├── CardController.js     # Card CRUD, solution management
-│   └── SessionController.js  # Session management, review submission
-├── middleware/
-│   ├── auth.js               # JWT authentication
-│   └── errorHandler.js       # Centralized error handling
-├── models/
-│   ├── User.js               # User schema (identity, preferences, stats)
-│   └── Card.js               # Card schema (content, solutions, SR fields)
-├── repositories/
-│   ├── UserRepository.js     # User data access
-│   └── CardRepository.js     # Card data access, due card queries
-├── routes/
-│   ├── auth.js               # Auth endpoints
-│   ├── cards.js              # Card endpoints
-│   └── sessions.js           # Session endpoints
-├── services/
-│   ├── UserService.js        # User business logic, auth, streak calculation
-│   ├── CardService.js        # Card business logic, validation
-│   ├── SessionService.js     # Session orchestration, review processing
-│   └── SpacedRepetitionService.js  # SM-2 algorithm implementation
-└── app.js                    # Express app setup
-```
+### Routes
 
-## Core Modules
+**Responsibility**: Define API endpoints and mount middleware
 
-```mermaid
-graph TD
-    AuthController[AuthController] --> UserService[UserService]
-    UserService --> UserRepository[UserRepository]
-    UserRepository --> UserModel[UserModel]
+**Best Practices**:
 
-    CardController[CardController] --> CardService[CardService]
-    CardService --> CardRepository[CardRepository]
-    CardRepository --> CardModel[CardModel]
+- Keep routes thin - delegate to controllers
+- Group related endpoints logically
+- Apply middleware (auth, validation) at route level
+- Use descriptive HTTP verbs (GET, POST, PUT, DELETE)
+- Example: `/api/users/:id` → GET retrieves, PUT updates, DELETE removes
 
-    SessionController[SessionController] --> SessionService[SessionService]
-    SessionService --> CardRepository
-    SessionService --> UserService
+### Controllers
 
-    SessionService --> SpacedRepetitionService[SpacedRepetitionService]
-    CardService --> SpacedRepetitionService
-```
+**Responsibility**: Handle HTTP requests, parse parameters, orchestrate responses
 
-## Session Flow (Spaced Repetition)
+**Best Practices**:
+
+- Extract request data (body, params, query)
+- Call validators on user input
+- Invoke services for business logic
+- Format and return responses (status codes, JSON)
+- Never contain business logic - delegate to services
+- Example: `async createSession(req, res)` → validate → call service → respond
+
+### Validators
+
+**Responsibility**: Validate input data and throw errors with proper HTTP status codes
+
+**Best Practices**:
+
+- Reuse field validators across different models
+- Throw custom error classes (ValidationError, AuthenticationError, etc.)
+- Validate at controller level BEFORE calling services
+- Include helpful error messages with field names
+- Example: `validateUserCreation()` checks email format, password strength, required fields
+
+### Services
+
+**Responsibility**: Implement business logic and orchestrate repositories
+
+**Best Practices**:
+
+- Contain all business rules (algorithms, calculations, workflows)
+- Call repositories for data, never query database directly
+- Can call other services if needed
+- Throw domain-specific errors
+- Keep methods focused and single-purpose
+- Example: `SessionService.create()` selects problems via SpacedRepetitionService, calls ProblemRepository, creates session
+
+### Repositories
+
+**Responsibility**: Abstract all database operations for one entity
+
+**Best Practices**:
+
+- One repository per model/entity
+- Provide clean query methods (find, create, update, delete)
+- Use Mongoose operations, hide query complexity
+- Optionally add convenience methods (incrementTotalReviews, updateStats)
+- Never leak database details to services
+- Example: `userRepository.incrementReviewAndUpdateStreak()` is atomic (single DB call)
+
+### Models
+
+**Responsibility**: Define schemas, validation rules, and data structure
+
+**Best Practices**:
+
+- Define all field types, defaults, and constraints
+- Add indexes for frequently queried fields
+- Use timestamps for audit trails
+- Enforce data integrity at schema level (unique, required, enum)
+- Keep schemas focused - one model per entity
+- Example: User model has unique email index, enum difficulty for problems
+
+### Error Handler Middleware
+
+**Responsibility**: Catch errors and format responses consistently
+
+**Best Practices**:
+
+- Centralize error handling - one middleware catches all
+- Map custom errors to HTTP status codes
+- Return consistent error JSON (message, status, field)
+- Log errors for debugging
+- Never expose internal errors to client
+- Example: ValidationError (400) vs NotFoundError (404) vs ConflictError (409)
+
+## Data Flow Example
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant Controller as SessionController
-    participant Service as SessionService
-    participant SR as SpacedRepetitionService
-    participant Repo as CardRepository
-    participant UserRepo as UserRepository
-
-    Client->>Controller: submitReview(cardId, quality)
-    Controller->>Service: processReview(cardId, userId, quality)
-    Service->>Repo: findById(cardId, userId)
-    Repo-->>Service: card
-    Service->>SR: reviewCard(card, quality)
-    SR-->>Service: updated SR fields
-    Service->>Repo: updateSR(cardId, userId, srFields)
-    Repo-->>Service: saved card
-    Service->>UserRepo: updateStatsOnReview(userId)
-    UserRepo-->>Service: updated stats
-    Service-->>Controller: response with nextDue
-    Controller-->>Client: updated card + scheduling
+    Client->>Routes: POST /api/sessions {data}
+    Routes->>Controllers: SessionController
+    Controllers->>Validators: Validate input
+    Validators-->>Controllers: Validated data
+    Controllers->>Services: SessionService.create()
+    Services->>Repos: Query due problems
+    Repos->>Models: MongoDB find()
+    Models-->>Repos: Problem docs
+    Repos-->>Services: Problems
+    Services->>Services: SpacedRepetition.select()
+    Services-->>Controllers: Session data
+    Controllers-->>Client: 200 + Session JSON
 ```
 
-## Models
+## Data Models
 
-### User
-**Purpose**: Identity, preferences, and aggregate learning state
+### User Model
 
-**Fields**:
-- `email`: Unique identifier
-- `passwordHash`: Bcrypt-hashed password
-- `name`: Display name
-- `avatarUrl`: Profile picture
-- `preferences`: User settings (dailyGoal, maxSessionSize, preferredCategories)
-- `stats`: Learning statistics (totalReviews, streak, lastActiveDate)
+See [src/models/User.js](../src/models/User.js)
 
-**Key Design**: User stores only aggregate stats, not per-card learning state. Card-specific SR data lives in Card model.
+Core user entity with authentication and personalization data:
 
-### Card
-**Purpose**: Learning content + spaced repetition state
+- **Credentials**: email (unique), passwordHash
+- **Profile**: name, avatarUrl
+- **Preferences**: dailyGoal (default: 20), maxSessionSize (default: 10)
+- **Stats**: totalReviews, streak, lastActiveDate
+- **Timestamps**: createdAt, updatedAt (auto-managed by Mongoose)
 
-**Fields**:
-- `userId`: Owner reference (data isolation)
-- `questionName`: Problem title
-- `category`: Problem category (Array, String, DP, etc.)
-- `difficulty`: Overall difficulty (easy, medium, hard)
-- `tags`: Searchable tags
-- `solutions[]`: Ordered array of solution approaches
-  - `name`: Solution name (e.g., "Brute Force", "Optimal Sliding Window")
-  - `approachOrder`: Explicit ordering (0, 1, 2...)
-  - `intuition`: Why this approach works
-  - `steps[]`: Step-by-step explanation
-  - `code`: Code snippet with language
-  - `timeComplexity`: Time complexity notation
-  - `spaceComplexity`: Space complexity notation
-- `selectedSolutionIndex`: Currently studied solution
-- `revisionNotes`: User-added insights
-- `easeFactor`: SM-2 ease factor (default 2.5, min 1.3)
-- `interval`: Days until next review
-- `repetition`: Number of successful reviews
-- `dueDate`: When card is due for review
-- `lastReviewed`: Last review timestamp
-- `lastQuality`: Quality score of last review (1-5)
-- `lapseCount`: Number of times quality < 3
+### Problem Model
 
-**Key Design**: Solutions are immutable knowledge, SR fields are mutable learning state. This separation allows updating problem content without affecting learning progress.
+See [src/models/Problem.js](../src/models/Problem.js)
 
-## Implementation Mapping
+Represents DSA problems with metadata:
 
-- **Controllers**: `src/controllers/*` - Request/response handling, validation
-- **Services**: `src/services/*` - Business logic, SR algorithm, orchestration
-- **Repositories**: `src/repositories/*` - Database access, queries, atomic operations
-- **Models**: `src/models/*` - Mongoose schemas, validation, indexes
-- **Routes**: `src/routes/*` - Endpoint definitions, middleware composition
-- **Middleware**: `src/middleware/*` - Cross-cutting concerns (auth, error handling)
-- **Config**: `src/config/*` - Constants, environment setup, DB connection
+- **Content**: title, description
+- **Classification**: difficulty (easy/medium/hard), tags, companies
+- **Source**: source (e.g., LeetCode), sourceId, createdBy
+- **Indexes**: (source + sourceId) for uniqueness, difficulty & tags for queries
 
-## Key Design Decisions
+### UserProblemState Model
 
-### Separation of Concerns
-- **User** = identity + meta (preferences, aggregate stats)
-- **Card** = learning + SR (per-card scheduling)
-- This separation allows updating user profile without affecting learning progress
+See [src/models/UserProblemState.js](../src/models/UserProblemState.js)
 
-### Spaced Repetition Isolation
-- **SpacedRepetitionService** is a pure function service
-- No HTTP or database dependencies
-- Easy to test and modify algorithm independently
+Tracks individual user progress on problems using SM-2 spaced repetition algorithm:
 
-### Data Isolation
-- All repository queries include `userId` for multi-tenant safety
-- No cross-user data access possible at database level
-- Compound indexes optimize common queries
+- **Relationships**: userId, problemId (both required references)
+- **Status**: new → learning → review → mastered
+- **SM-2 Fields**: easeFactor (1.3–∞), interval (days), repetitions
+- **Scheduling**: lastReviewedAt, nextReviewAt (computed by SpacedRepetitionService)
+- **Feedback**: lastResult (again/hard/good/easy), lapseCount, revisionNotes
+- **Indexes**: (userId + problemId) for uniqueness, (userId + nextReviewAt) for due queries
 
-### Testability
-- Unit tests mock repositories, test business logic only
-- Integration tests use real MongoDB Memory Server
-- E2E tests verify complete user journeys
-- ~70% unit, ~25% integration, ~5% e2e distribution
+### Other Models
 
-## API Endpoints
+- **Collection** - Problem groupings/categories
+- **UserCollection** - User's subscribed collections
+- **ProblemContent** - Detailed problem solutions & approaches
 
-### Authentication (`/api/auth`)
-- `POST /register` - Create new user
-- `POST /login` - Authenticate and get JWT token
-- `GET /profile` - Get current user profile
-- `PUT /profile` - Update user profile
-- `GET /stats` - Get user learning statistics
+## Validation & Error Handling
 
-### Cards (`/api/cards`)
-- `POST /` - Create new flashcard
-- `GET /` - List cards with filters (category, difficulty, tags, pagination)
-- `GET /:cardId` - Get single card
-- `PUT /:cardId` - Update card content
-- `DELETE /:cardId` - Delete card
-- `POST /:cardId/solutions` - Add solution to card
-- `PUT /:cardId/solutions/:solutionIndex` - Update specific solution
+### Error Classes
 
-### Sessions (`/api/sessions`)
-- `GET /` - Get due cards for review session
-- `POST /review` - Submit review result (easy/medium/hard)
+See [src/validators/](../src/validators/) or refactor plan: [docs/validators_refactor_plan.md](./validators_refactor_plan.md)
 
-## Spaced Repetition Algorithm (SM-2)
+Custom exceptions with HTTP status codes:
 
-The system uses the SuperMemo 2 algorithm for scheduling reviews:
+- **ValidationError** (400) - Field validation failures
+- **AuthenticationError** (401) - Auth failures
+- **NotFoundError** (404) - Resource not found
+- **ConflictError** (409) - Duplicate entries
 
-**Quality Mapping**:
-- `easy` → quality 5
-- `medium` → quality 3
-- `hard` → quality 1
+### Field & Model Validators
 
-**Ease Factor Update**:
-```
-EF = EF + (0.1 - (5 - q) × (0.08 + (5 - q) × 0.02))
-EF = max(1.3, EF)
-```
+Reusable validators for common fields (email, password, name, dailyGoal, maxSessionSize, preferences)
 
-**Interval Progression**:
-- Repetition 0 → 1 day
-- Repetition 1 → 6 days
-- Repetition 2+ → `interval × EF`
+Composed validators for entity-level validation:
 
-**Lapse Handling**:
-- Quality < 3 → reset repetition to 0, interval to 1, increment lapseCount
+- User: validateUserCreation(), validateUserUpdate()
 
-## Testing Strategy
+### Error Handling Middleware
 
-The project follows a layered testing approach:
+See [src/middleware/errorHandler.js](../src/middleware/errorHandler.js)
 
-**Unit Tests** (~70%): Mock dependencies, test business logic
-- Services: SR algorithm, validation, orchestration
-- Controllers: request/response handling
-- Middleware: authentication, error handling
+Centralized error catching and response formatting. Converts custom errors to JSON responses with appropriate HTTP status codes.
 
-**Integration Tests** (~25%): Real DB + HTTP
-- Repositories: Database queries, atomic operations
-- API: Full request/response cycles with authentication
+## ProblemService Architecture
 
-**E2E Tests** (~5%): Critical user journeys
-- Complete flow: register → create cards → session → reviews → verify scheduling
+### Service Responsibilities
 
-**Key Principles**:
-- Reset DB per test, no shared state
-- Test behavior (inputs → outputs), not implementation
-- Mock at boundaries, not everywhere
-- Keep tests fast and deterministic
+ProblemService handles global problem content management with clear separation of concerns:
+
+- **Content Management**: createProblem, getProblem, listProblems
+- **Metadata Updates**: updateProblemMetadata (title, description, difficulty, tags, companies)
+- **Content Updates**: updateProblemContent (solutions, versioning)
+- **Deletion**: deleteProblem (with safety checks)
+
+### Validation Layer
+
+ProblemService uses a dedicated ProblemValidator module ([src/utils/problemValidator.js](../src/utils/problemValidator.js)) for:
+
+- **Input Validation**: title, description, difficulty, source, sourceId
+- **Solution Validation**: max 10 solutions, required fields, payload size limits
+- **Code Snippet Validation**: language, code, max 10000 chars per snippet
+- **Normalization**: solution ordering, default values
+
+### API Design
+
+Split endpoints for clear separation:
+
+- `PUT /api/problems/:problemId/metadata` - Update problem metadata
+- `PUT /api/problems/:problemId/content` - Update problem solutions
+- `GET /api/problems` - Lightweight list (no description)
+- `GET /api/problems/:problemId` - Full details with solutions
+
+### Cross-Domain Separation
+
+ProblemService has no dependency on UserProblemState or user-specific state. Deletion safety checks are handled at a higher layer (not in ProblemService itself).
+
+### Transactional Thinking
+
+ProblemService.createProblem has manual rollback: if content creation fails, the problem is deleted to prevent orphan data.
+
