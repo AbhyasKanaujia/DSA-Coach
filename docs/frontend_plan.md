@@ -1,560 +1,236 @@
-# Frontend Plan
-
-## Core Principle
-
-This is not a flashcard app. It is a **guided recall engine**.
-
-The UI controls how knowledge is revealed over time: problem → intuition → approach → code → complexity. A user should never think about the UI itself. The UI must feel like background music.
-
-**Rule:** UI should never make the user think about the UI. If the user wonders "where do I click?" or "what next?", the design has failed.
-
-## The 3 Core Flows
-
-Everything in the product reduces to three flows. If these work, the product works.
-
-1. **Review Session** — the core product
-2. **Create / Edit Card**
-3. **Browse / Manage Cards**
-
-Secondary concerns (dashboards, stats, mobile polish, shortcuts) come later.
-
-## The Review Flow (locked)
-
-One screen. One card. One action at a time.
-
-```
-Show:   Question name + tags (e.g., Array, DP)
-        ↓
-User thinks
-        ↓
-Click:  "Reveal Intuition"
-        ↓
-Click:  "Reveal Steps"
-        ↓
-Click:  "Reveal Code"
-        ↓
-Click:  "Reveal Complexity"
-        ↓
-Rate:   Easy / Medium / Hard
-        ↓
-Next card (auto)
-```
-
-No jumping around. No clutter. Progressive disclosure only.
-
-### Decisions
-
-- **How many reviews per day?** Backend decides (due cards). No user setting in V1.
-- **Quit mid-session?** Save after every review. Session is stateless. No "submit session" concept.
-- **Mouse vs keyboard?** Mouse-first. Keyboard shortcuts (1/2/3 for rating) come later.
-- **Mobile?** Supported but not designed mobile-first. Avoid complex layouts.
-- **Multiple solutions per card?** One at a time, ordered brute → optimal. Never dump all at once.
-
-## Information Architecture
-
-```
-/dashboard     → stats + "Start Review" CTA
-/cards         → list + search + filters
-/cards/new     → create card
-/cards/:id     → edit card
-/review        → full-screen session
-```
-
-Keep it boring. That's a feature.
-
-## Phased Build
-
-A phase is **complete only when**:
-- flow works end-to-end
-- a real user can use it without confusion
-- basic tests pass
-- no "what should I do next?" moments exist
-
-After each phase, sit with the app for 10–15 minutes. If anything feels annoying, unclear, or makes you hesitate, do not advance.
-
-### Phase 0 — UX contract
-
-Write down (no code) exactly what happens at each step of the primary flow:
-
-```
-Open app → Dashboard → Click "Start Review"
-→ See card → Think → Reveal (progressive) → Rate → Next card
-→ End when no cards left → Show "Done for today"
-```
-
-If unclear, every later phase collapses.
-
-### Phase 1 — Review Session (core product)
-
-Build only `/review`. Nothing else.
-
-- Fetch due cards from backend
-- Show question name + tags
-- Progressive reveal: intuition → steps → code → complexity
-- Rating buttons: Easy / Medium / Hard
-- Auto-save after each review
-- One card at a time, no navigation clutter
-
-**Test:** Can you review for 10 minutes without friction? Any "what next?" moments = fix first.
-
-### Phase 2 — Minimal Card Creation
-
-Build `/cards/new`.
-
-- Question name
-- Category / tags
-- Solutions (simple input, not fancy)
-
-Do **not**: build a fancy editor, support multiple languages, add complex UI.
-
-**Test:** Can you add 3 cards in under 2 minutes? Hesitation = bad UX.
-
-### Phase 3 — Card Listing
-
-Build `/cards`.
-
-- Question name (required and prominent)
-- Category
-- Due status (optional)
-
-Every list item must be recognizable instantly. Do not show only patterns/categories — they are logically clean but useless for recognition.
-
-**Test:** Can you scan and find a specific question in 3 seconds?
-
-### Phase 4 — Session Refinements
-
-Refine behavior, not features.
-
-- Session progress indicator ("3 / 10 done")
-- Safe quit (already handled by auto-save, just surface it)
-- Optional keyboard shortcuts (1/2/3 for rating)
-
-Do **not** add gamification or dashboards yet.
-
-### Phase 5 — Dashboard
-
-Build `/dashboard`.
-
-- Due cards count
-- Reviews today
-- Streak
-- Primary CTA: "Start Review"
-
-Nothing else. No dopamine hacks.
-
-### Phase 6 — Polish
-
-Only after usage feels smooth:
-
-- Spacing and typography
-- Subtle animations
-- Mobile tweaks
-- Full keyboard navigation
-
-## Anti-Goals
-
-- No designing for every possible user behavior. Design for the ideal path and the most common failure (quit mid-session). Ignore the rest in V1.
-- No gamification systems. "Cards reviewed today" + streak + "done for today" is enough.
-- No premature abstractions, theming, or component libraries beyond what ships the flow.
-- No mobile-first layout gymnastics.
-- No perfecting UX upfront. Ship one clean flow, observe, improve.
-
-## Checkpoint Before Advancing
-
-Before moving from phase N to N+1, answer honestly:
-
-1. Did I use this myself for 10–15 minutes?
-2. Did anything feel annoying or unclear?
-3. Did I hesitate even once?
-
-If any answer fails, do not advance.
-
----
-
-## Technical Implementation
-
-### Tech Stack
-
-- **Framework:** Vite + React
-- **Styling:** Tailwind CSS with OKLCH color system
-- **Routing:** React Router
-- **API Client:** Axios
-- **Utilities:** date-fns
-
-### Project Structure
-
-```
-frontend/
-├── src/
-│   ├── components/     # Reusable components
-│   │   ├── ReviewCard.jsx
-│   │   ├── RevealLayer.jsx
-│   │   ├── RatePanel.jsx
-│   │   ├── SolutionForm.jsx
-│   │   ├── StepsInput.jsx
-│   │   ├── CodeEditor.jsx
-│   │   ├── CardList.jsx
-│   │   ├── CardRow.jsx
-│   │   ├── FilterBar.jsx
-│   │   ├── StatCard.jsx
-│   │   └── StartReviewButton.jsx
-│   ├── pages/         # Route pages
-│   │   ├── Dashboard.jsx
-│   │   ├── Review.jsx
-│   │   ├── Library.jsx
-│   │   ├── AddCard.jsx
-│   │   └── Stats.jsx
-│   ├── hooks/         # Custom hooks
-│   ├── lib/           # API client, utilities
-│   │   ├── api.js
-│   │   └── colors.js
-│   ├── styles/        # Global styles
-│   │   └── global.css
-│   └── main.jsx       # Entry point
-├── public/
-└── package.json
-```
-
-### Phase 0 — Project Setup
-
-**Tasks:**
-1. Initialize Vite + React project in `frontend/` directory
-2. Install dependencies:
-   - `react-router-dom` for routing
-   - `tailwindcss` + `postcss` + `autoprefixer` for styling
-   - `axios` for API calls
-   - `date-fns` for date formatting
-3. Configure Tailwind CSS with OKLCH color system from reference
-4. Set up React Router with routes:
-   - `/` → Dashboard
-   - `/review` → Review Session
-   - `/cards` → Library
-   - `/cards/new` → Add Card
-   - `/stats` → Stats
-5. Set up API client (`src/lib/api.js`) with:
-   - Base URL configuration
-   - JWT token handling
-   - Request/response interceptors
-6. Configure OKLCH colors in Tailwind config:
-   - Extract color palette from `docs/Frontend Reference Implementation/shell.jsx`
-   - Add as custom colors in `tailwind.config.js`
-
-**Verification:**
-- Run `npm run dev` and verify app loads
-- Verify Tailwind CSS is working
-- Verify routing works between placeholder pages
-
-### Phase 1 — Review Session (Core Product)
-
-**API Endpoints:**
-- `GET /api/sessions` - Get due cards
-- `POST /api/sessions/review` - Submit review result
-
-**Files to Create:**
-- `src/lib/api.js` - API client with session methods
-- `src/pages/Review.jsx` - Review session page
-- `src/components/ReviewCard.jsx` - Card display
-- `src/components/RevealLayer.jsx` - Progressive reveal layer
-- `src/components/RatePanel.jsx` - Rating buttons
-
-**Implementation Details:**
-- Fetch due cards on mount
-- Display current card with question name + tags
-- Implement progressive reveal (7 layers):
-  1. Problem name
-  2. Recall constraints
-  3. Intuition
-  4. Approach steps
-  5. Code
-  6. Complexity
-  7. Self-assessment
-- Rating buttons: Easy / Medium / Hard
-- Auto-save after each review
-- Show "Done for today" when no cards left
-- Keyboard shortcuts (Space to reveal, 1/2/3 to rate)
-
-**Verification:**
-- Start backend server
-- Create test cards via API or use existing data
-- Navigate to `/review`
-- Complete a full review session
-- Verify ratings are saved to backend
-- Test keyboard shortcuts
-
-### Phase 2 — Minimal Card Creation
-
-**API Endpoints:**
-- `POST /api/cards` - Create new card
-
-**Files to Create:**
-- `src/pages/AddCard.jsx` - Add card page
-- `src/components/SolutionForm.jsx` - Solution input form
-- `src/components/StepsInput.jsx` - Dynamic steps list
-- `src/components/CodeEditor.jsx` - Code input with syntax highlighting placeholder
-
-**Implementation Details:**
-- Form with fields:
-  - Question name (required)
-  - Category (required)
-  - Difficulty (easy/medium/hard)
-  - Tags (comma-separated)
-- Solutions section:
-  - Solution name
-  - Intuition
-  - Steps (dynamic list)
-  - Code (language + snippet)
-  - Time complexity
-  - Space complexity
-- Add/remove multiple solutions
-- Save button that submits to API
-
-**Verification:**
-- Navigate to `/cards/new`
-- Fill out form with test data
-- Submit and verify card is created in backend
-- Verify card appears in review session
-
-### Phase 3 — Card Listing
-
-**API Endpoints:**
-- `GET /api/cards` - List cards with filters
-
-**Files to Create:**
-- `src/pages/Library.jsx` - Library page
-- `src/components/CardList.jsx` - Card list display
-- `src/components/CardRow.jsx` - Single card row
-- `src/components/FilterBar.jsx` - Filter controls
-
-**Implementation Details:**
-- Display list of all cards
-- Each card shows:
-  - Question name (prominent)
-  - Category
-  - Difficulty badge
-  - Due status (optional)
-- Filters:
-  - Search by name/tag
-  - Filter by difficulty
-  - Filter by category
-- Sort options:
-  - Due date
-  - Ease factor
-  - Lapse count
-  - Name
-
-**Verification:**
-- Navigate to `/cards`
-- Verify all cards are displayed
-- Test search functionality
-- Test filters (difficulty, category)
-- Test sorting options
-- Click card to view details (placeholder for now)
-
-### Phase 4 — Session Refinements
-
-**Files to Modify:**
-- `src/pages/Review.jsx` - Add progress, shortcuts, swipe
-- `src/components/RatePanel.jsx` - Update with keyboard hints
-
-**Implementation Details:**
-- Add session progress indicator:
-  - "3 / 10 done" display
-  - Visual progress bar
-- Implement safe quit:
-  - Already handled by auto-save
-  - Add "Exit Session" button
-  - Show confirmation dialog
-- Add keyboard shortcuts:
-  - `1` / `←` - Hard
-  - `2` / `↓` - Medium
-  - `3` / `→` - Easy
-  - `Space` - Reveal next
-  - `Esc` - Exit session
-- Add swipe gestures (optional, from reference):
-  - Drag left = Hard
-  - Drag down = Medium
-  - Drag right = Easy
-
-**Verification:**
-- Start review session
-- Verify progress indicator updates
-- Test all keyboard shortcuts
-- Test exit session with confirmation
-- (Optional) Test swipe gestures
-
-### Phase 5 — Dashboard
-
-**API Endpoints:**
-- `GET /api/auth/stats` - Get user stats
-
-**Files to Create:**
-- `src/pages/Dashboard.jsx` - Dashboard page
-- `src/components/StatCard.jsx` - Single stat display
-- `src/components/StartReviewButton.jsx` - CTA button
-
-**Implementation Details:**
-- Display key metrics:
-  - Due cards count
-  - Reviews today
-  - Current streak
-- Primary CTA: "Start Review" button
-- Simple activity visualization (placeholder for now)
-
-**Verification:**
-- Navigate to `/`
-- Verify stats are displayed
-- Click "Start Review" and navigate to review session
-- Verify stats update after completing reviews
-
-### Phase 6 — Polish
-
-**Files to Modify:**
-- `src/styles/global.css` - Global styles and animations
-- `src/components/*` - Update all components with polish
-- `src/App.jsx` - Add keyboard shortcuts
-
-**Implementation Details:**
-- Refine spacing and typography:
-  - Apply consistent spacing scale
-  - Use JetBrains Mono for code, Inter for UI
-  - Ensure proper line heights and font sizes
-- Add subtle animations:
-  - Reveal transitions
-  - Button hover states
-  - Page transitions
-- Mobile tweaks:
-  - Responsive layouts
-  - Touch-friendly buttons
-  - Mobile navigation (bottom nav)
-- Full keyboard navigation:
-  - Tab order
-  - Focus states
-  - Global shortcuts (e.g., `g r` for review)
-
-**Verification:**
-- Test on mobile viewport
-- Test keyboard navigation
-- Verify animations feel smooth
-- Check accessibility (ARIA labels, focus states)
-
-### Backend API Reference
-
-**Authentication (`/api/auth`):**
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
-- `GET /api/auth/profile` - Get current user profile
-- `PUT /api/auth/profile` - Update user profile
-- `GET /api/auth/stats` - Get user learning statistics
-
-**Cards (`/api/cards`):**
-- `POST /api/cards` - Create new flashcard
-- `GET /api/cards` - List cards with filters (category, difficulty, tags, pagination)
-- `GET /api/cards/:cardId` - Get single card
-- `PUT /api/cards/:cardId` - Update card content
-- `DELETE /api/cards/:cardId` - Delete card
-- `POST /api/cards/:cardId/solutions` - Add solution to card
-- `PUT /api/cards/:cardId/solutions/:solutionIndex` - Update specific solution
-
-**Sessions (`/api/sessions`):**
-- `GET /api/sessions` - Get due cards for review session
-- `POST /api/sessions/review` - Submit review result (easy/medium/hard)
-
-### OKLCH Color System
-
-Extracted from `docs/Frontend Reference Implementation/shell.jsx`:
-
-```javascript
-const T = {
-  bg:        'oklch(0.14 0.01 240)',
-  bgLift:    'oklch(0.17 0.01 240)',
-  bgCard:    'oklch(0.19 0.01 240)',
-  bgInset:   'oklch(0.12 0.01 240)',
-  border:    'oklch(0.28 0.01 240)',
-  borderLt:  'oklch(0.24 0.01 240)',
-  text:      'oklch(0.94 0.005 85)',
-  textDim:   'oklch(0.64 0.01 240)',
-  textMuted: 'oklch(0.46 0.01 240)',
-  accent:    'oklch(0.78 0.13 145)', // mastery green
-  warn:      'oklch(0.78 0.13 75)',  // due amber
-  danger:    'oklch(0.72 0.15 25)',  // lapse red
-  info:      'oklch(0.78 0.13 230)', // info blue
-};
-```
-
-### Typography
-
-- **Code/Mono:** JetBrains Mono
-- **UI/Sans:** Inter
-
-## Testing Strategy
-
-Mirror the backend's philosophy: unit tests are fast and isolated, integration tests exercise real behavior against a mocked network, e2e (optional) covers the full journey across frontend + backend.
-
-### Structure
-
-```
-frontend/
-├── src/
-└── tests/
-    ├── unit/          # components render, user interactions
-    ├── integration/   # full flows with MSW-mocked API
-    └── setup/         # jest-dom, MSW server, handlers
-```
-
-### Tooling
-
-- **Runner:** Jest + `jest-environment-jsdom`
-- **Component testing:** React Testing Library + `@testing-library/user-event`
-- **Assertions:** `@testing-library/jest-dom`
-- **Network mock:** Mock Service Worker (MSW) — intercepts `fetch`/`axios` at the network layer so components hit "real" endpoints without a live backend
-- **Transforms:** `babel-jest` with `@babel/preset-env` + `@babel/preset-react` (Jest does not consume Vite's transform pipeline)
-
-### Rules
-
-- **Test flows, not internals.** No assertions on state, props, or implementation details. Query by accessible role/text the user would see.
-- **Unit = fast + isolated.** One component or hook. Stub context only when the component depends on it.
-- **Integration = real behavior.** Render the page under `MemoryRouter` with the real `AuthContext` and real axios client. Swap only the network via MSW handlers.
-- **No snapshot tests** for UI correctness — they rot and assert nothing meaningful. Prefer explicit role/text queries.
-- **One test, one user story.** Avoid assertion soup.
-
-### Example Integration: Review Flow
-
-```
-Visit /review
-  → card loads (GET /api/sessions mocked)
-  → click "Reveal Intuition" → intuition text visible
-  → click "Reveal Steps" → steps visible
-  → click "Reveal Code" → code visible
-  → click "Easy" → POST /api/sessions/review called with rating
-  → next card renders
-  → last card rated → "Done for today" visible
-```
-
-This single test covers the core product. If it passes, the product works.
-
-### Per-Phase Test Coverage
-
-Each phase ships with tests before it is marked complete:
-
-- **Phase 1 (Review):** unit tests for `RevealLayer` (progressive disclosure), `RatePanel` (button click fires callback with correct rating). Integration test for the full review flow above.
-- **Phase 2 (Add Card):** unit tests for `SolutionForm`, `StepsInput` (add/remove rows). Integration test: fill form → submit → POST /api/cards called with correct payload → redirect.
-- **Phase 3 (Library):** unit tests for `FilterBar`, `CardRow`. Integration test: list renders → filter by category → filtered results shown.
-- **Phase 4 (Refinements):** keyboard shortcut tests (press `1` → Hard rating fired). Exit-session confirmation test.
-- **Phase 5 (Dashboard):** integration test: dashboard loads stats → click "Start Review" → navigates to `/review`.
-- **Phase 6 (Polish):** accessibility checks (focus order, ARIA roles) via RTL queries.
-
-### Scripts
-
-```json
-{
-  "test": "jest",
-  "test:unit": "jest tests/unit",
-  "test:integration": "jest tests/integration",
-  "test:watch": "jest --watch",
-  "test:coverage": "jest --coverage"
-}
-```
-
-### E2E (Optional, Post-V1)
-
-Playwright against the real backend + real frontend, seeded DB. Covers one happy path per core flow. Do not write e2e for edge cases — those belong in integration.
+ Frontend Build Plan — DSA Flashcard                                                       
+
+ Context
+
+ The backend is complete and exposes 7 route domains (auth, problems, collections, library,
+ sessions, reviews, progress) with JWT auth, role-based admin gates, server-stateful
+ sessions (Session + Attempt entities), and SM-2-style spaced repetition. There is no
+ frontend yet. The package.json already wires npm run frontend → cd frontend && npm run dev
+ and npm run dev → concurrent backend + frontend, so the project expects the frontend to
+ live in /frontend.
+
+ The goal of this plan is to break the UI into a build order that maps onto what the backend
+  actually exposes — not what an older doc speculated. The ordering is dictated by data
+ dependency: you cannot review without an active subscription, so library must work before
+ the session screen is meaningful.
+
+ Stack: Vite + React + Tailwind, React Router, Axios, plain JS. No admin UI in V1 — admins
+ use Bruno + the existing dsa-card-onboarder skill.
+
+ ---
+ What the frontend must support (derived from src/routes/*)
+
+ ┌─────────────┬─────────────────────────────────────┬──────────────────────────────────┐
+ │   Domain    │              Endpoints              │             UI need              │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ auth        │ register, login, GET/PUT            │ Login + register forms, profile  │
+ │             │ /auth/profile                       │ page                             │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ collections │ GET (public list), GET /:id         │ Browse + collection detail       │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ library     │ GET, POST add, PATCH                │ "My Library" with toggles        │
+ │             │ activate/deactivate, DELETE         │                                  │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ sessions    │ POST /start, GET, GET /:id,         │ Session runner + (optional)      │
+ │             │ /complete, /abandon                 │ history                          │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ problems    │ GET /:id (with populated solutions) │ Card view inside session         │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ reviews     │ POST                                │ Rate button → POST {problemId,   │
+ │             │                                     │ quality, sessionId}              │
+ ├─────────────┼─────────────────────────────────────┼──────────────────────────────────┤
+ │ progress    │ GET                                 │ Dashboard stats                  │
+ └─────────────┴─────────────────────────────────────┴──────────────────────────────────┘
+
+ Admin endpoints (POST/PUT/DELETE on problems & collections) are intentionally out of scope.
+
+ ---
+ Ground rules
+
+ 1. Backend owns intelligence. Frontend never computes due dates, ordering, or session size.
+  It calls /sessions/start, walks the returned queuedProblemIds, posts /reviews per card,
+ done.
+ 2. One axios client at src/api/client.js with a request interceptor that attaches
+ Authorization: Bearer <token> from localStorage, and a response interceptor that on 401
+ clears auth and redirects to /login.
+ 3. One module per domain under src/api/ (auth.js, collections.js, library.js, sessions.js,
+ reviews.js, progress.js, problems.js) — each function returns parsed JSON, throws on error.
+  Components never call axios directly.
+ 4. Auth state via React context (AuthProvider) holding {token, user}, persisted to
+ localStorage. A <RequireAuth> wrapper guards every route except /login and /register.
+ 5. Tailwind only for styling. No component library. OKLCH palette in tailwind.config.js.
+ 6. Vitest + React Testing Library for tests; one smoke test per phase before moving on.
+
+ ---
+ Phase 0 — Scaffold (half a day)
+
+ Create /frontend:
+
+ frontend/
+   package.json          # vite, react, react-router-dom, axios, date-fns, tailwindcss,
+ vitest, @testing-library/react
+   vite.config.js        # dev server on 5173, proxy /api → http://localhost:3000
+   tailwind.config.js    # OKLCH palette tokens
+   index.html
+   src/
+     main.jsx            # RouterProvider + AuthProvider
+     App.jsx
+     api/
+       client.js         # axios instance + interceptors
+     auth/
+       AuthContext.jsx
+       RequireAuth.jsx
+     pages/              # filled in later phases
+     components/
+     hooks/
+
+ .env: VITE_API_BASE_URL=http://localhost:3000/api.
+
+ Done when: npm run dev starts both servers; visiting localhost:5173 renders a placeholder;
+ backend CORS already allows 5173.
+
+ ---
+ Phase 1 — Auth (1 day)
+
+ Pages: /login, /register, /profile.
+
+ - src/api/auth.js: register, login, getProfile, updateProfile.
+ - AuthProvider: on mount reads token from localStorage, hydrates user via getProfile;
+ exposes login(creds), register(payload), logout(), updateProfile(patch).
+ - RequireAuth: redirects to /login if no token; shows a brief loader while hydrating.
+ - Forms: native <form> + useState. Inline error from server (409, 401, validator messages).
+  No form library.
+ - /profile: shows email + name + role; lets user edit name and preferences (dailyGoal,
+ maxSessionSize).
+
+ Verify: register → land on /. Refresh → stays logged in. Logout → cannot access /. Bad
+ creds → inline error.
+
+ ---
+ Phase 2 — Library + Browse (1–2 days)
+
+ This must come before the session page, because a session is empty unless an active
+ subscription exists.
+
+ Pages: /collections (browse), /collections/:id (detail), /library (mine).
+
+ - src/api/collections.js: list({page, limit}), getById(id).
+ - src/api/library.js: list(), add(collectionId), activate(id), deactivate(id), remove(id).
+ - /collections: paginated grid of public collections (name, problem count, "Add to library"
+  button → 409 means already subscribed).
+ - /collections/:id: collection metadata + populated problems list (title, difficulty pill,
+ tags). Read-only.
+ - /library: list of {collection, isActive}. Each row: activate/deactivate toggle,
+ "Unsubscribe" with confirm. Empty state CTA → /collections.
+
+ Verify: subscribe to a collection from /collections, see it in /library, toggle active,
+ unsubscribe, re-subscribe.
+
+ ---
+ Phase 3 — Review Session (the core loop, 2–3 days)
+
+ Page: /session. This is the only screen with non-trivial state.
+
+ Flow:
+ 1. On mount, POST /sessions/start with optional {limit, maxNew} from user prefs. Store
+ {sessionId, queuedProblemIds, config, meta}.
+ 2. Local state: currentIndex, revealLevel ∈ {title, description, intuition, steps, code,
+ complexity}, solutionIndex (multi-solution problems are ordered brute → optimal).
+ 3. Lazy-fetch each problem via GET /problems/:id as the index advances (cache results in a
+ Map).
+ 4. Render progressive reveal — one button "Reveal next" cycles through levels. When at
+ complexity, the rate panel (Again / Hard / Easy) becomes active.
+ 5. On rate: POST /reviews { problemId, quality, sessionId }. Optimistically advance to next
+  index. On the last card, show the completion screen.
+ 6. "End session" button → POST /sessions/:id/abandon, route to /.
+ 7. Empty session (queuedProblemIds.length === 0): show "Nothing due — add or activate a
+ collection" with link to /library.
+
+ Components:
+ - SessionRunner — owns the state machine.
+ - Card — pure presentational: title, tags, difficulty, body slots for each reveal layer.
+ - RevealControls — "Reveal next" + multi-solution switcher.
+ - RatePanel — three buttons; disabled until fully revealed.
+ - SessionSummary — shown when currentIndex === queuedProblemIds.length; reads from meta and
+  from local counts.
+
+ Keyboard shortcuts deferred to Phase 5.
+
+ Verify: start session → walk 3+ problems → each rating updates SR state (cross-check via
+ GET /progress change). Abandon mid-way works. Refresh in the middle of a session lands you
+ back on / cleanly (sessionId is server-stored; we accept losing UI position on reload in
+ V1).
+
+ ---
+ Phase 4 — Dashboard (half a day)
+
+ Page: / (replaces the placeholder).
+
+ - src/api/progress.js: get().
+ - Cards: total reviewed, streak, mastery breakdown (new/learning/review/mastered), last
+ active date.
+ - Big "Start Session" button → /session.
+ - Quick links to /library and /collections.
+
+ Verify: dashboard numbers match GET /progress directly. Streak increments after a review on
+  a new day.
+
+ ---
+ Phase 5 — Polish (1–2 days, gated by your own use)
+
+ Only do these once you've actually used the app for 2–3 days.
+
+ - Keyboard shortcuts on /session (space reveal, 1/2/3 rate).
+ - Loading skeletons on every fetch.
+ - Toast for errors (one tiny component, no library).
+ - Mobile pass: ensure /session is usable on a phone.
+ - A11y pass: focus rings, ARIA on rate buttons, <main> landmarks.
+ - Optional: /sessions history page (GET /sessions).
+
+ ---
+ Critical files
+
+ New:
+ - /frontend/** (entire directory)
+
+ To update after plan approval:
+ - /Users/abhyas/projects/dsa_flashcard/docs/frontend_plan.md — replace with a condensed
+ version of this plan (it's currently stale: predates Session/Attempt entities, library
+ subscriptions, and admin role).
+
+ Reference (do not modify):
+ - src/routes/*.js — endpoint contracts
+ - src/models/*.js — entity shapes (especially Session, Attempt, UserProblemState)
+ - tests/bruno/DSA Flashcard/ — example payloads for every endpoint; use as ground truth
+ when building API modules.
+
+ ---
+ Verification (end-to-end)
+
+ After Phase 3 you should be able to walk this manually:
+
+ 1. npm run dev (starts backend on 3000, frontend on 5173).
+ 2. Register a new user at /register.
+ 3. Have an admin (you, via Bruno) seed a collection with 5 problems if none exist.
+ 4. /collections → subscribe → /library → confirm active.
+ 5. /session → walk all 5 problems, reveal each layer, rate.
+ 6. / → progress reflects the 5 attempts; mastery breakdown updates.
+ 7. Refresh → still logged in, dashboard still correct.
+ 8. Logout → redirected to /login; protected routes blocked.
+
+ Run npm test in /frontend between phases — at minimum the AuthProvider test and a
+ SessionRunner state-machine test should be green before declaring Phase 3 done.
+
+ ---
+ What this plan deliberately omits
+
+ - Admin UI for problems/collections (use Bruno + dsa-card-onboarder skill).
+ - Card creation/editing pages.
+ - Session history & analytics beyond /progress.
+ - Tag/difficulty filters on the problem list (no user-facing problem search in V1; problems
+  are reached only via collections).
+ - Social/sharing/likes/comments.
+ - Offline / PWA.
+
+ These are easy to layer on later because the API client and auth layer make new screens
+ cheap.

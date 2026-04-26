@@ -1,44 +1,29 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import RequireAuth from './auth/RequireAuth';
+import AppLayout from './components/AppLayout';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
 import Placeholder from './pages/Placeholder';
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Placeholder title="Login (Phase 1)" />} />
-      <Route path="/register" element={<Placeholder title="Register (Phase 1)" />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route
-        path="/"
         element={
           <RequireAuth>
-            <Placeholder title="Dashboard (Phase 4)" />
+            <AppLayout />
           </RequireAuth>
         }
-      />
-      <Route
-        path="/library"
-        element={
-          <RequireAuth>
-            <Placeholder title="Library (Phase 2)" />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/collections"
-        element={
-          <RequireAuth>
-            <Placeholder title="Browse Collections (Phase 2)" />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/session"
-        element={
-          <RequireAuth>
-            <Placeholder title="Review Session (Phase 3)" />
-          </RequireAuth>
-        }
-      />
+      >
+        <Route path="/" element={<Placeholder title="Dashboard (Phase 4)" />} />
+        <Route path="/library" element={<Placeholder title="Library (Phase 2)" />} />
+        <Route path="/collections" element={<Placeholder title="Browse Collections (Phase 2)" />} />
+        <Route path="/session" element={<Placeholder title="Review Session (Phase 3)" />} />
+        <Route path="/profile" element={<Profile />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

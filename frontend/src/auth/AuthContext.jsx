@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import client, { tokenStore, setOnUnauthorized } from '../api/client';
+import { tokenStore, setOnUnauthorized } from '../api/client';
+import * as authApi from '../api/auth';
 
 const AuthContext = createContext(null);
 
@@ -18,16 +19,34 @@ export function AuthProvider({ children }) {
     setOnUnauthorized(() => logout());
   }, [logout]);
 
+  const syncFromStorage = useCallback(() => {
+    const stored = tokenStore.get();
+    setToken((current) => {
+      if (stored === current) return current;
+      if (!stored) setUser(null);
+      return stored;
+    });
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key && e.key !== 'dsa.token') return;
+      syncFromStorage();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [syncFromStorage]);
+
   useEffect(() => {
     if (!token) {
       setHydrating(false);
       return;
     }
     let cancelled = false;
-    client
-      .get('/auth/profile')
-      .then((res) => {
-        if (!cancelled) setUser(res.data);
+    authApi
+      .getProfile()
+      .then((data) => {
+        if (!cancelled) setUser(data);
       })
       .catch(() => {
         if (!cancelled) logout();
@@ -41,19 +60,28 @@ export function AuthProvider({ children }) {
   }, [token, logout]);
 
   const login = useCallback(async (email, password) => {
-    const { data } = await client.post('/auth/login', { email, password });
-    tokenStore.set(data.token);
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
+    const { token: nextToken, user: nextUser } = await authApi.login({ email, password });
+    tokenStore.set(nextToken);
+    setToken(nextToken);
+    setUser(nextUser);
+    return nextUser;
   }, []);
 
-  const register = useCallback(async ({ email, password, name }) => {
-    await client.post('/auth/register', { email, password, name });
-    return login(email, password);
-  }, [login]);
+  const register = useCallback(
+    async ({ email, password, name }) => {
+      await authApi.register({ email, password, name });
+      return login(email, password);
+    },
+    [login]
+  );
 
-  const value = { user, token, hydrating, login, register, logout };
+  const updateProfile = useCallback(async (patch) => {
+    const next = await authApi.updateProfile(patch);
+    setUser(next);
+    return next;
+  }, []);
+
+  const value = { user, token, hydrating, login, register, logout, updateProfile, syncFromStorage };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
