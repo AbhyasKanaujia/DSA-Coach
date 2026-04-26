@@ -1,0 +1,35 @@
+meta {
+  name: Delete Collection (Admin)
+  type: http
+  seq: 5
+  tags: [
+    collections
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/collections/{{collectionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([204, 404]).to.include(response.status);
+  }
+}
+
+docs {
+  Admin-only: Delete a collection.
+
+  Cascades: all UserCollection subscriptions for this collection are removed.
+  UserProblemState is NOT affected — progress survives collection deletion.
+}

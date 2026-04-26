@@ -1,0 +1,38 @@
+meta {
+  name: Add Problem to Collection (Admin)
+  type: http
+  seq: 6
+  tags: [
+    collections
+  ]
+}
+
+post {
+  url: {{baseUrl}}/collections/{{collectionId}}/problems/{{problemId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([200, 404]).to.include(response.status);
+    if (response.status === 200) {
+      expect(response.body).to.have.property('problemIds');
+      expect(response.body.problemIds).to.be.an('array');
+    }
+  }
+}
+
+docs {
+  Admin-only: Add a problem to a collection.
+
+  Idempotent — adding the same problem twice does not duplicate it (uses $addToSet).
+}

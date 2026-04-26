@@ -1,0 +1,50 @@
+meta {
+  name: Flow 28 - Multi-Collection Dedup Session
+  type: http
+  seq: 28
+  tags: [
+    flows
+    e2e
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('sessionId');
+    expect(response.body.problems).to.be.an('array');
+    expect(response.body.problems.length).to.be.greaterThan(0);
+
+    // Verify no duplicate problem IDs (dedup across collections)
+    var problemIds = response.body.problems.map(function(p) { return p._id; });
+    var uniqueIds = [...new Set(problemIds)];
+    expect(uniqueIds.length).to.equal(problemIds.length);
+
+    // Verify all 3 unique problems appear (problem1 is shared, should appear once)
+    expect(response.body.problems.length).to.be.greaterThanOrEqual(3);
+  }
+}
+
+docs {
+  Step 28: Start session with two active collections that share a problem.
+
+  The shared problem (problemId1) must appear only once in the session.
+  Both collections' unique problems should be included.
+  This is the critical dedup test that validates the design principle:
+  Collections reference problems; sessions dedupe across collections.
+}

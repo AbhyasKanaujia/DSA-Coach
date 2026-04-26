@@ -1,0 +1,38 @@
+meta {
+  name: Flow 23 - Reactivate Collection
+  type: http
+  seq: 23
+  tags: [
+    flows
+    e2e
+    library
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/library/{{flowCollectionId}}/activate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('isActive');
+    expect(response.body.isActive).to.equal(true);
+  }
+}
+
+docs {
+  Step 23: Reactivate the previously deactivated collection.
+
+  After reactivation, the collection's problems should appear in sessions again.
+}

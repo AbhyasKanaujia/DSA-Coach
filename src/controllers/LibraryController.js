@@ -40,6 +40,16 @@ class LibraryController {
       next(error);
     }
   }
+
+  async unsubscribe(req, res, next) {
+    try {
+      const collectionId = collectionValidator.validateCollectionId(req.params.collectionId);
+      await libraryService.unsubscribe(req.userId, collectionId);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new LibraryController();

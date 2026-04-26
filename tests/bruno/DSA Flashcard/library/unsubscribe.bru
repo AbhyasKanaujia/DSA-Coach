@@ -1,0 +1,35 @@
+meta {
+  name: Unsubscribe From Collection
+  type: http
+  seq: 5
+  tags: [
+    library
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/library/{{collectionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([204, 404]).to.include(response.status);
+  }
+}
+
+docs {
+  Remove a collection from the user's library.
+
+  Returns 204 on success, 404 if the collection is not in the library.
+  User progress (UserProblemState) is NOT deleted — it survives unsubscribe.
+}

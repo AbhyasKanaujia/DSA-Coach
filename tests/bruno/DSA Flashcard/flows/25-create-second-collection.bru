@@ -1,0 +1,57 @@
+meta {
+  name: Flow 25 - Admin Creates Second Collection (Shared Problem)
+  type: http
+  seq: 25
+  tags: [
+    flows
+    e2e
+    collections
+  ]
+}
+
+post {
+  url: {{baseUrl}}/collections
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAdminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Flow Test - Second Collection",
+    "problemIds": [
+      "{{flowProblemId1}}",
+      "{{flowProblemId3}}"
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar('flowCollectionId2', res.body._id);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(201);
+    expect(response.body).to.have.property('_id');
+    expect(response.body.name).to.equal('Flow Test - Second Collection');
+    expect(response.body.problemIds).to.be.an('array');
+    expect(response.body.problemIds.length).to.equal(2);
+  }
+}
+
+docs {
+  Step 25: Admin creates a second collection that shares problem1 with the first collection.
+
+  This setup is needed to test multi-collection dedup behavior in sessions.
+  The second collection also contains problem3 which is NOT in the first collection.
+}

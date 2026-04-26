@@ -36,6 +36,14 @@ class LibraryService {
     }
     return await userCollectionRepository.setActive(userId, collectionId, false);
   }
+
+  async unsubscribe(userId, collectionId) {
+    const existing = await userCollectionRepository.findByUserAndCollection(userId, collectionId);
+    if (!existing) {
+      throw new NotFoundError('Collection in library');
+    }
+    return await userCollectionRepository.unsubscribe(userId, collectionId);
+  }
 }
 
 module.exports = new LibraryService();

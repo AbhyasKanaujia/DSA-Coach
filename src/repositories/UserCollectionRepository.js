@@ -43,6 +43,10 @@ class UserCollectionRepository {
       .populate('collectionId')
       .sort({ addedAt: -1 });
   }
+
+  async unsubscribeAll(collectionId) {
+    return await UserCollection.deleteMany({ collectionId });
+  }
 }
 
 module.exports = new UserCollectionRepository();

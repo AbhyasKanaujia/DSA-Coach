@@ -1,0 +1,41 @@
+meta {
+  name: Flow 30 - Library After Unsubscribe
+  type: http
+  seq: 30
+  tags: [
+    flows
+    e2e
+    library
+  ]
+}
+
+get {
+  url: {{baseUrl}}/library
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.be.an('array');
+    expect(response.body.length).to.equal(1);
+
+    // The remaining subscription should be for the first collection
+    var remainingCollectionId = response.body[0].collectionId._id || response.body[0].collectionId;
+    expect(remainingCollectionId.toString()).to.equal(bru.getEnvVar('flowCollectionId'));
+  }
+}
+
+docs {
+  Step 30: Verify library only contains the first collection after unsubscribing from the second.
+
+  The unsubscribed collection should no longer appear in the user's library.
+}

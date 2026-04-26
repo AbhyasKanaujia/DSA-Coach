@@ -1,0 +1,36 @@
+meta {
+  name: Flow 26 - User Subscribes and Activates Second Collection
+  type: http
+  seq: 26
+  tags: [
+    flows
+    e2e
+    library
+  ]
+}
+
+post {
+  url: {{baseUrl}}/library/{{flowCollectionId2}}/add
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+  }
+}
+
+docs {
+  Step 26: User adds the second collection to their library.
+
+  Accepts 409 if already added (idempotent for re-runs).
+}

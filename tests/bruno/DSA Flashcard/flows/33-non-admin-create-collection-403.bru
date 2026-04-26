@@ -1,0 +1,43 @@
+meta {
+  name: Flow 33 - Non-Admin Create Collection Returns 403
+  type: http
+  seq: 33
+  tags: [
+    flows
+    e2e
+    unhappy
+  ]
+}
+
+post {
+  url: {{baseUrl}}/collections
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Unauthorized Collection"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(403);
+    expect(response.body).to.have.property('error');
+  }
+}
+
+docs {
+  Step 33: A regular user attempting to create a collection receives 403 Forbidden.
+
+  Only admins can create/update/delete collections.
+}

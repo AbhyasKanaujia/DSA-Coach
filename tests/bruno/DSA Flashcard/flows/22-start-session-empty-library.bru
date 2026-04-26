@@ -1,0 +1,50 @@
+meta {
+  name: Flow 22 - Start Session With No Active Collections
+  type: http
+  seq: 22
+  tags: [
+    flows
+    e2e
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('flowEmptySessionId', res.body.sessionId);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('sessionId');
+    expect(response.body.problems).to.be.an('array');
+    expect(response.body.problems.length).to.equal(0);
+    expect(response.body).to.have.property('meta');
+    expect(response.body.meta.totalAvailable).to.equal(0);
+  }
+}
+
+docs {
+  Step 22: Start a session when no collections are active.
+
+  After deactivating the only collection (step 21), the session should return
+  an empty problems array with totalAvailable = 0.
+
+  This tests the graceful degradation path in SessionService.
+}

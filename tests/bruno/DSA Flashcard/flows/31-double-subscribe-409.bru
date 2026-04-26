@@ -1,0 +1,37 @@
+meta {
+  name: Flow 31 - Double Subscribe Returns 409
+  type: http
+  seq: 31
+  tags: [
+    flows
+    e2e
+    unhappy
+  ]
+}
+
+post {
+  url: {{baseUrl}}/library/{{flowCollectionId}}/add
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(409);
+    expect(response.body).to.have.property('error');
+  }
+}
+
+docs {
+  Step 31: Attempting to add an already-subscribed collection returns 409 Conflict.
+
+  This validates the double-subscribe protection in LibraryService.
+}

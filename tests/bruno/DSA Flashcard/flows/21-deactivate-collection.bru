@@ -1,0 +1,38 @@
+meta {
+  name: Flow 21 - User Deactivates Collection
+  type: http
+  seq: 21
+  tags: [
+    flows
+    e2e
+    library
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/library/{{flowCollectionId}}/deactivate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('isActive');
+    expect(response.body.isActive).to.equal(false);
+  }
+}
+
+docs {
+  Step 21: User deactivates the collection in their library.
+
+  After deactivation, the collection's problems should no longer appear in sessions.
+}

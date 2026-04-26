@@ -1,0 +1,47 @@
+meta {
+  name: Update Collection (Admin)
+  type: http
+  seq: 4
+  tags: [
+    collections
+  ]
+}
+
+put {
+  url: {{baseUrl}}/collections/{{collectionId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Updated Collection Name",
+    "description": "Updated description",
+    "isPublic": true,
+    "isEditable": false
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([200, 404]).to.include(response.status);
+    if (response.status === 200) {
+      expect(response.body).to.have.property('name');
+      expect(response.body).to.have.property('description');
+    }
+  }
+}
+
+docs {
+  Admin-only: Update collection metadata (name, description, isPublic, isEditable).
+
+  Problem membership changes must use the dedicated add/remove problem endpoints.
+}

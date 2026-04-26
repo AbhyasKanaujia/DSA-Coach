@@ -1,0 +1,36 @@
+meta {
+  name: Flow 27 - User Activates Second Collection
+  type: http
+  seq: 27
+  tags: [
+    flows
+    e2e
+    library
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/library/{{flowCollectionId2}}/activate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('isActive');
+    expect(response.body.isActive).to.equal(true);
+  }
+}
+
+docs {
+  Step 27: Activate the second collection so its problems contribute to sessions.
+}

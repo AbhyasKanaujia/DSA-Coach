@@ -1,0 +1,37 @@
+meta {
+  name: Flow 32 - Activate Not-Subscribed Collection Returns 404
+  type: http
+  seq: 32
+  tags: [
+    flows
+    e2e
+    unhappy
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/library/{{flowCollectionId2}}/activate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(404);
+    expect(response.body).to.have.property('error');
+  }
+}
+
+docs {
+  Step 32: Attempting to activate a collection that is not in the library returns 404.
+
+  The collectionId2 was unsubscribed in step 29, so activating it should fail.
+}

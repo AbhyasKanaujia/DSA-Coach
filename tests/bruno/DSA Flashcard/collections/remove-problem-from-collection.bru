@@ -1,0 +1,38 @@
+meta {
+  name: Remove Problem From Collection (Admin)
+  type: http
+  seq: 7
+  tags: [
+    collections
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/collections/{{collectionId}}/problems/{{problemId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([200, 404]).to.include(response.status);
+    if (response.status === 200) {
+      expect(response.body).to.have.property('problemIds');
+      expect(response.body.problemIds).to.be.an('array');
+    }
+  }
+}
+
+docs {
+  Admin-only: Remove a problem from a collection.
+
+  No-op if the problem is not in the collection.
+}

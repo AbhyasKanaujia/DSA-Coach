@@ -7,5 +7,6 @@ router.get('/', auth, libraryController.getLibrary);
 router.post('/:collectionId/add', auth, libraryController.addToLibrary);
 router.patch('/:collectionId/activate', auth, libraryController.activateCollection);
 router.patch('/:collectionId/deactivate', auth, libraryController.deactivateCollection);
+router.delete('/:collectionId', auth, libraryController.unsubscribe);
 
 module.exports = router;

@@ -1,0 +1,49 @@
+meta {
+  name: Flow 24 - Start Session After Reactivation
+  type: http
+  seq: 24
+  tags: [
+    flows
+    e2e
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('flowReactivatedSessionId', res.body.sessionId);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('sessionId');
+    expect(response.body.problems).to.be.an('array');
+    expect(response.body.problems.length).to.be.greaterThan(0);
+
+    response.body.problems.forEach(function(problem) {
+      expect(problem).to.have.property('userState');
+    });
+  }
+}
+
+docs {
+  Step 24: Start session after reactivating the collection.
+
+  Verifies that session correctly includes problems after collection is reactivated.
+}
