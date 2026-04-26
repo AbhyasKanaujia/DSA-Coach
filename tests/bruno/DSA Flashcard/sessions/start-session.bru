@@ -25,19 +25,25 @@ body:json {
 tests {
   function onResponse(request, response) {
     expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('sessionId');
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('active');
     expect(response.body).to.have.property('problems');
+    expect(response.body).to.have.property('config');
     expect(response.body).to.have.property('meta');
     expect(response.body.meta).to.have.property('dueCount');
     expect(response.body.meta).to.have.property('newCount');
-    expect(response.body.meta).to.have.property('total');
+    expect(response.body.meta).to.have.property('totalAvailable');
+    expect(response.body.meta).to.have.property('queuedCount');
+    expect(response.body.meta).to.have.property('attemptedCount');
     expect(response.body.problems).to.be.an('array');
   }
 }
 
 docs {
-  Start a new learning session. Returns due problems (review) and new problems.
+  Start a new learning session. Creates a Session document with lifecycle tracking.
 
-  POST is used because this creates state records for new problems.
+  POST is used because this creates state records for new problems and a Session document.
 
   Body (all optional):
   - limit: max problems in session (default 10, max 50)
@@ -45,11 +51,12 @@ docs {
 
   Response:
   {
-    problems: [...],  // ordered: due first (sorted by nextReviewAt ASC), then new
+    sessionId: string,    // persistent session ID
+    status: 'active',     // session lifecycle status
+    problems: [...],      // ordered: due first (sorted by nextReviewAt ASC), then new
+    config: { limit, maxNew },
     meta: {
-      dueCount: number,   // total due problems available
-      newCount: number,   // total new problems available
-      total: number       // dueCount + newCount
+      dueCount, newCount, totalAvailable, queuedCount, attemptedCount
     }
   }
 }

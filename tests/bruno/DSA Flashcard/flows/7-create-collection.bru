@@ -1,0 +1,62 @@
+meta {
+  name: Flow 7 - Admin Creates Collection
+  type: http
+  seq: 7
+  tags: [
+    flows
+    e2e
+    setup
+  ]
+}
+
+post {
+  url: {{baseUrl}}/collections
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAdminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Flow Test - DSA Essentials",
+    "problemIds": [
+      "{{flowProblemId1}}",
+      "{{flowProblemId2}}",
+      "{{flowProblemId3}}"
+    ]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar('flowCollectionId', res.body._id);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+    if (response.status === 201) {
+      expect(response.body).to.have.property('_id');
+      expect(response.body).to.have.property('name');
+      expect(response.body).to.have.property('problemIds');
+      expect(response.body.problemIds).to.be.an('array');
+      expect(response.body.problemIds).to.have.length(3);
+    }
+  }
+}
+
+docs {
+  Step 7: Admin creates a collection containing all 3 flow test problems.
+
+  This is required for the session flow — the user must have an active collection with problems.
+
+  The collectionId is stored as flowCollectionId for use in library steps.
+}

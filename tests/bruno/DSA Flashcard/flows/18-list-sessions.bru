@@ -1,0 +1,50 @@
+meta {
+  name: Flow 18 - List Session History
+  type: http
+  seq: 18
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+get {
+  url: {{baseUrl}}/sessions
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+query {
+  page: 1
+  limit: 10
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.be.an('array');
+    // Should have at least 2 sessions from the flow (completed + abandoned)
+    expect(response.body.length).to.be.greaterThan(0);
+
+    // Verify statuses
+    const statuses = response.body.map(s => s.status);
+    expect(statuses).to.include('completed');
+    expect(statuses).to.include('abandoned');
+  }
+}
+
+docs {
+  Step 18: List all sessions for the user.
+
+  Verifies:
+  - Session history is returned as an array
+  - Contains at least the completed and abandoned sessions from this flow
+  - Sessions have correct statuses
+}

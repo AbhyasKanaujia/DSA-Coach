@@ -26,7 +26,8 @@ headers {
 body:json {
   {
     "problemId": "{{flowProblemId1}}",
-    "quality": "easy"
+    "quality": "easy",
+    "sessionId": "{{flowSessionId}}"
   }
 }
 
@@ -38,6 +39,7 @@ tests {
     expect(response.body).to.have.property('easeFactor');
     expect(response.body).to.have.property('interval');
     expect(response.body).to.have.property('status');
+    expect(response.body).to.have.property('attemptId');
 
     // First review on a new problem should transition to 'learning'
     expect(response.body.status).to.equal('learning');
@@ -47,15 +49,16 @@ tests {
 }
 
 docs {
-  Submit a review with quality "easy" on a problem.
+  Submit a review with quality "easy" on a problem within a session.
 
-  This is the most common flow: a user reviews a new problem and marks it easy.
+  Now includes sessionId to track the attempt within the session lifecycle.
 
   Expected behavior:
   - Status transitions from 'new' to 'learning'
   - Ease factor increases (> 2.5)
   - Interval set to 1 (first successful review)
-  - nextDue date is set to tomorrow
+  - An Attempt document is created (attemptId returned)
+  - Session attemptedProblemIds is updated
 
-  Prerequisites: Run flow 1-6 first to set flowAuthToken and flowProblemId1.
+  Prerequisites: Run flow 1-7 first to set flowAuthToken, flowProblemId1, and flowSessionId.
 }

@@ -1,0 +1,46 @@
+meta {
+  name: Flow 15 - Verify Session Auto-Completed
+  type: http
+  seq: 15
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+get {
+  url: {{baseUrl}}/sessions/{{flowSessionId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('completed');
+    expect(response.body).to.have.property('completedAt');
+    expect(response.body.completedAt).to.not.be.null;
+    expect(response.body).to.have.property('attemptedProblemIds');
+    expect(response.body.attemptedProblemIds).to.be.an('array');
+    expect(response.body.attemptedProblemIds.length).to.equal(response.body.queuedProblemIds.length);
+  }
+}
+
+docs {
+  Step 15: Verify the session auto-completed after all problems were reviewed.
+
+  After step 14 reviewed the last queued problem, the session should have auto-transitioned to 'completed'.
+
+  Verifies:
+  - Session status is 'completed'
+  - completedAt is set
+  - attemptedProblemIds length matches queuedProblemIds length
+}

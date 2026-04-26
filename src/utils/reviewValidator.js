@@ -3,7 +3,7 @@ const { ValidationError } = require('./validators');
 
 class ReviewValidator {
   validateReviewSubmission(data) {
-    const { problemId, quality } = data;
+    const { problemId, quality, sessionId } = data;
 
     if (!problemId) {
       throw new ValidationError('Problem ID is required', 'problemId');
@@ -25,7 +25,13 @@ class ReviewValidator {
       );
     }
 
-    return { problemId, quality };
+    if (sessionId !== undefined && sessionId !== null && sessionId !== '') {
+      if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        throw new ValidationError('Invalid session ID format', 'sessionId');
+      }
+    }
+
+    return { problemId, quality, sessionId: sessionId || null };
   }
 }
 

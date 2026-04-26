@@ -6,6 +6,8 @@ const errorHandler = require('./middleware/errorHandler');
 const { ensureAdminUser, migrateCreatedBy } = require('./config/seed');
 
 const authRoutes = require('./routes/auth');
+const collectionRoutes = require('./routes/collections');
+const libraryRoutes = require('./routes/library');
 const problemRoutes = require('./routes/problems');
 const sessionRoutes = require('./routes/sessions');
 const reviewRoutes = require('./routes/reviews');
@@ -36,6 +38,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/collections', collectionRoutes);
+app.use('/api/library', libraryRoutes);
 app.use('/api/problems', problemRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/reviews', reviewRoutes);

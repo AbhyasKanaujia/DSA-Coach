@@ -7,7 +7,18 @@ module.exports = {
       hard: 3,
       again: 1
     },
-    INTERVALS: [1, 6]
+    INTERVALS: [1, 6],
+    DEFAULT_SESSION_SIZE: 10,
+    DEFAULT_MAX_NEW: 3,
+    MAX_SESSION_SIZE: 50,
+    MAX_NEW_PER_SESSION: 20
+  },
+  SESSION: {
+    STATUS: {
+      ACTIVE: 'active',
+      COMPLETED: 'completed',
+      ABANDONED: 'abandoned'
+    }
   },
   AUTH: {
     JWT_EXPIRES_IN: '7d'

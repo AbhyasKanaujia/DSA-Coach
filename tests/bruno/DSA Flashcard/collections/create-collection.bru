@@ -1,0 +1,47 @@
+meta {
+  name: Create Collection (Admin)
+  type: http
+  seq: 1
+  tags: [
+    collections
+  ]
+}
+
+post {
+  url: {{baseUrl}}/collections
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Test Collection",
+    "problemIds": []
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+    if (response.status === 201) {
+      expect(response.body).to.have.property('_id');
+      expect(response.body).to.have.property('name');
+    }
+  }
+}
+
+docs {
+  Admin-only: Create a new problem collection.
+
+  Body:
+  - name: required, collection name
+  - problemIds: optional array of problem ObjectIds
+}

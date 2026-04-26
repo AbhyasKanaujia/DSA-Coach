@@ -1,0 +1,54 @@
+meta {
+  name: Flow 14 - Review Problem 3 (Again) - Session Auto-Completes
+  type: http
+  seq: 14
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowSessionProblem3}}",
+    "quality": "again",
+    "sessionId": "{{flowSessionId}}"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('attemptId');
+    expect(response.body).to.have.property('status');
+    // 'again' resets — status should be 'learning'
+    expect(response.body.status).to.equal('learning');
+  }
+}
+
+docs {
+  Step 14: Review the third (last queued) problem as "again".
+
+  This is the last problem in the session. After this review, the session should auto-complete because all queued problems have been attempted.
+
+  Verifies:
+  - Review succeeds
+  - Attempt is created
+  - Status resets to 'learning' (again quality)
+
+  Next step (15) will verify the session status is 'completed'.
+}

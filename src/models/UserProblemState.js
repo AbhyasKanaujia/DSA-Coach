@@ -37,7 +37,7 @@ const userProblemStateSchema = new mongoose.Schema({
   },
   lastResult: {
     type: String,
-    enum: ['again', 'hard', 'good', 'easy']
+    enum: ['again', 'hard', 'easy']
   },
   lapseCount: {
     type: Number,

@@ -1,0 +1,35 @@
+meta {
+  name: Get Session
+  type: http
+  seq: 10
+  tags: [
+    sessions
+  ]
+}
+
+get {
+  url: {{baseUrl}}/sessions/{{sessionId}}
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('_id');
+    expect(response.body).to.have.property('status');
+    expect(response.body).to.have.property('queuedProblemIds');
+    expect(response.body).to.have.property('attemptedProblemIds');
+  }
+}
+
+docs {
+  Get details of a specific session by ID.
+
+  Returns the full session document including status, queued/attempted problems, and config.
+
+  Requires authentication. Returns 404 if session not found or doesn't belong to user.
+}

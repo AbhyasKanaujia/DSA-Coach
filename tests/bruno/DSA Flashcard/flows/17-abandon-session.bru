@@ -1,0 +1,42 @@
+meta {
+  name: Flow 17 - Abandon Active Session
+  type: http
+  seq: 17
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/{{flowSessionId2}}/abandon
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('abandoned');
+    expect(response.body).to.have.property('completedAt');
+  }
+}
+
+docs {
+  Step 17: Explicitly abandon the active session.
+
+  Simulates a user ending a study session early without completing it.
+
+  Verifies:
+  - Session status becomes 'abandoned'
+  - completedAt is set
+}

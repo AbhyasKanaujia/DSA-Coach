@@ -1,0 +1,81 @@
+meta {
+  name: Flow 11 - Start Session
+  type: http
+  seq: 11
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "limit": 10,
+    "maxNew": 3
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('flowSessionId', res.body.sessionId);
+    // Store problem IDs from the session for subsequent reviews
+    if (res.body.problems && res.body.problems.length > 0) {
+      bru.setEnvVar('flowSessionProblem1', res.body.problems[0]._id);
+      if (res.body.problems.length > 1) {
+        bru.setEnvVar('flowSessionProblem2', res.body.problems[1]._id);
+      }
+      if (res.body.problems.length > 2) {
+        bru.setEnvVar('flowSessionProblem3', res.body.problems[2]._id);
+      }
+    }
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('sessionId');
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('active');
+    expect(response.body).to.have.property('problems');
+    expect(response.body.problems.length).to.be.greaterThan(0);
+    expect(response.body).to.have.property('config');
+    expect(response.body.config).to.have.property('limit');
+    expect(response.body.config).to.have.property('maxNew');
+    expect(response.body).to.have.property('meta');
+    expect(response.body.meta).to.have.property('dueCount');
+    expect(response.body.meta).to.have.property('newCount');
+    expect(response.body.meta).to.have.property('totalAvailable');
+    expect(response.body.meta).to.have.property('queuedCount');
+    expect(response.body.meta).to.have.property('attemptedCount');
+    expect(response.body.meta.attemptedCount).to.equal(0);
+    expect(response.body.meta.queuedCount).to.be.greaterThan(0);
+  }
+}
+
+docs {
+  Step 11: User starts a study session.
+
+  Now that the user has an active collection with problems, the session should return problems.
+  The sessionId and problem IDs are stored for subsequent review steps.
+
+  Verifies:
+  - Session is created with status 'active'
+  - sessionId is returned (persistent session document)
+  - Problems are returned (from the active collection)
+  - Meta contains due/new counts, queuedCount, attemptedCount = 0
+}

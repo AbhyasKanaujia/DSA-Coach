@@ -1,0 +1,40 @@
+meta {
+  name: Flow 8 - User Browses Collections
+  type: http
+  seq: 8
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+get {
+  url: {{baseUrl}}/collections
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.be.an('array');
+    expect(response.body.length).to.be.greaterThan(0);
+
+    // Verify our collection appears in the list
+    const found = response.body.find(c => c.name === 'Flow Test - DSA Essentials');
+    expect(found).to.not.be.undefined;
+  }
+}
+
+docs {
+  Step 8: User browses available public collections.
+
+  Verifies the admin-created collection is visible.
+}

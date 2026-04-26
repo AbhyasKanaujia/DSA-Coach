@@ -1,0 +1,51 @@
+meta {
+  name: Flow 20 - Review Without Session (Backward Compat)
+  type: http
+  seq: 20
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowProblemId1}}",
+    "quality": "easy"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('attemptId');
+    expect(response.body).to.have.property('state');
+    expect(response.body).to.have.property('status');
+  }
+}
+
+docs {
+  Step 20: Review a problem WITHOUT a sessionId (backward compatibility).
+
+  During the transition period, reviews can be submitted without a sessionId.
+  An Attempt is still created (with sessionId: null).
+
+  Verifies:
+  - Review without sessionId still works
+  - attemptId is still returned
+  - State is updated normally
+}

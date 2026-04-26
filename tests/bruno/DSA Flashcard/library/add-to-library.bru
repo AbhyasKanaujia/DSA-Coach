@@ -1,0 +1,31 @@
+meta {
+  name: Add Collection to Library
+  type: http
+  seq: 2
+  tags: [
+    library
+  ]
+}
+
+post {
+  url: {{baseUrl}}/library/{{collectionId}}/add
+  body: none
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+  }
+}
+
+docs {
+  Add a collection to the user's library.
+
+  Returns 409 if already in library.
+  Replace {{collectionId}} with a valid collection ObjectId.
+}

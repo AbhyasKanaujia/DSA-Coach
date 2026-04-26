@@ -6,6 +6,7 @@ const ProblemContent = require('../../../src/models/ProblemContent');
 const UserProblemState = require('../../../src/models/UserProblemState');
 const Collection = require('../../../src/models/Collection');
 const UserCollection = require('../../../src/models/UserCollection');
+const Session = require('../../../src/models/Session');
 
 describe('Sessions API Integration Tests', () => {
   let token;
@@ -142,7 +143,7 @@ describe('Sessions API Integration Tests', () => {
       });
     });
 
-    it('should start a session and return due problems', async () => {
+    it('should start a session and return due problems with sessionId', async () => {
       const response = await request(app)
         .post('/api/sessions/start')
         .set('Authorization', `Bearer ${token}`)
@@ -150,8 +151,23 @@ describe('Sessions API Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.problems).toBeDefined();
+      expect(response.body.sessionId).toBeDefined();
+      expect(response.body.status).toBe('active');
+      expect(response.body.config).toBeDefined();
       expect(response.body.meta).toBeDefined();
       expect(response.body.meta.dueCount).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should create a Session document in the database', async () => {
+      const response = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const session = await Session.findById(response.body.sessionId);
+      expect(session).not.toBeNull();
+      expect(session.status).toBe('active');
+      expect(session.userId.toString()).toBe(userId.toString());
     });
 
     it('should return empty session when no active collections', async () => {
@@ -164,7 +180,7 @@ describe('Sessions API Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.problems).toHaveLength(0);
-      expect(response.body.meta.total).toBe(0);
+      expect(response.body.meta.queuedCount).toBe(0);
     });
 
     it('should return 401 without token', async () => {
@@ -192,6 +208,121 @@ describe('Sessions API Integration Tests', () => {
         .send({ limit: 0 });
 
       expect(response.status).toBe(400);
+    });
+
+    it('should abandon previous active session when starting new one', async () => {
+      const first = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const second = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const firstSession = await Session.findById(first.body.sessionId);
+      expect(firstSession.status).toBe('abandoned');
+
+      const secondSession = await Session.findById(second.body.sessionId);
+      expect(secondSession.status).toBe('active');
+    });
+  });
+
+  describe('GET /api/sessions/:sessionId', () => {
+    it('should return session details', async () => {
+      const startResponse = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const response = await request(app)
+        .get(`/api/sessions/${startResponse.body.sessionId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body._id).toBe(startResponse.body.sessionId);
+    });
+
+    it('should return 404 for nonexistent session', async () => {
+      const response = await request(app)
+        .get('/api/sessions/507f1f77bcf86cd799439011')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should return 401 without token', async () => {
+      const response = await request(app)
+        .get('/api/sessions/507f1f77bcf86cd799439011');
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('POST /api/sessions/:sessionId/complete', () => {
+    it('should complete an active session', async () => {
+      const startResponse = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const response = await request(app)
+        .post(`/api/sessions/${startResponse.body.sessionId}/complete`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('completed');
+    });
+
+    it('should return 409 when completing already completed session', async () => {
+      const startResponse = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      await request(app)
+        .post(`/api/sessions/${startResponse.body.sessionId}/complete`)
+        .set('Authorization', `Bearer ${token}`);
+
+      const response = await request(app)
+        .post(`/api/sessions/${startResponse.body.sessionId}/complete`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(409);
+    });
+  });
+
+  describe('POST /api/sessions/:sessionId/abandon', () => {
+    it('should abandon an active session', async () => {
+      const startResponse = await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const response = await request(app)
+        .post(`/api/sessions/${startResponse.body.sessionId}/abandon`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('abandoned');
+    });
+  });
+
+  describe('GET /api/sessions', () => {
+    it('should return user session history', async () => {
+      await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const response = await request(app)
+        .get('/api/sessions')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThanOrEqual(1);
     });
   });
 });

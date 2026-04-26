@@ -1,0 +1,34 @@
+meta {
+  name: Complete Session
+  type: http
+  seq: 11
+  tags: [
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/{{sessionId}}/complete
+  body: none
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('completed');
+    expect(response.body).to.have.property('completedAt');
+  }
+}
+
+docs {
+  Mark an active session as completed.
+
+  Returns 409 if session is already completed or abandoned.
+  Returns 404 if session not found or doesn't belong to user.
+}

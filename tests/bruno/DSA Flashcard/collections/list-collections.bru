@@ -1,0 +1,29 @@
+meta {
+  name: List Collections
+  type: http
+  seq: 2
+  tags: [
+    collections
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/collections
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.be.an('array');
+  }
+}
+
+docs {
+  List all public collections.
+}

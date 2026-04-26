@@ -1,0 +1,46 @@
+meta {
+  name: Flow 19 - Review in Completed Session (Should Fail)
+  type: http
+  seq: 19
+  tags: [
+    flows
+    e2e
+    error-case
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowSessionProblem1}}",
+    "quality": "easy",
+    "sessionId": "{{flowSessionId}}"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(409);
+  }
+}
+
+docs {
+  Step 19: Attempt to review a problem in a completed session.
+
+  The session from steps 11-14 was auto-completed. Reviewing in a completed session should return 409.
+
+  Verifies that session lifecycle is enforced — no reviews in non-active sessions.
+}

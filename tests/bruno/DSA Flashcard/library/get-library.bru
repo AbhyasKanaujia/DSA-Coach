@@ -1,0 +1,29 @@
+meta {
+  name: Get Library
+  type: http
+  seq: 1
+  tags: [
+    library
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/library
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.be.an('array');
+  }
+}
+
+docs {
+  Get the authenticated user's library (all added collections with active/inactive status).
+}

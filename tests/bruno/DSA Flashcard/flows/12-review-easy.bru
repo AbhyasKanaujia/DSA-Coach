@@ -1,0 +1,54 @@
+meta {
+  name: Flow 12 - Review Problem 1 (Easy)
+  type: http
+  seq: 12
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowSessionProblem1}}",
+    "quality": "easy",
+    "sessionId": "{{flowSessionId}}"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('attemptId');
+    expect(response.body).to.have.property('state');
+    expect(response.body).to.have.property('status');
+    expect(response.body).to.have.property('nextDue');
+    expect(response.body).to.have.property('easeFactor');
+    expect(response.body).to.have.property('interval');
+  }
+}
+
+docs {
+  Step 12: Review the first problem as "easy" within the session.
+
+  Verifies:
+  - Attempt is created (attemptId returned)
+  - State is updated (status, nextDue, easeFactor, interval)
+  - Session's attemptedProblemIds is updated
+
+  Problem 1 should transition from 'new' to 'learning'.
+}

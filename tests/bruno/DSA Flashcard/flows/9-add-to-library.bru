@@ -1,0 +1,35 @@
+meta {
+  name: Flow 9 - User Adds Collection to Library
+  type: http
+  seq: 9
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/library/{{flowCollectionId}}/add
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect([201, 409]).to.include(response.status);
+  }
+}
+
+docs {
+  Step 9: User adds the collection to their library.
+
+  Accepts 409 if already added (idempotent for re-runs).
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Abandon Session
+  type: http
+  seq: 12
+  tags: [
+    sessions
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/{{sessionId}}/abandon
+  body: none
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('abandoned');
+    expect(response.body).to.have.property('completedAt');
+  }
+}
+
+docs {
+  Abandon an active session. Used when user wants to end a session early without completing it.
+
+  Also happens automatically when starting a new session while one is already active.
+
+  Returns 409 if session is already completed or abandoned.
+  Returns 404 if session not found or doesn't belong to user.
+}

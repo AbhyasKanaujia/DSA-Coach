@@ -1,0 +1,45 @@
+meta {
+  name: Flow 13 - Review Problem 2 (Hard)
+  type: http
+  seq: 13
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "problemId": "{{flowSessionProblem2}}",
+    "quality": "hard",
+    "sessionId": "{{flowSessionId}}"
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('attemptId');
+    expect(response.body).to.have.property('status');
+  }
+}
+
+docs {
+  Step 13: Review the second problem as "hard" within the session.
+
+  Problem 2 transitions from 'new' to 'learning' (hard quality doesn't advance to review).
+}

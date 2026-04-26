@@ -1,0 +1,56 @@
+meta {
+  name: Flow 16 - New Session Auto-Abandons Previous
+  type: http
+  seq: 16
+  tags: [
+    flows
+    e2e
+  ]
+}
+
+post {
+  url: {{baseUrl}}/sessions/start
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{flowAuthToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "limit": 5,
+    "maxNew": 2
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar('flowSessionId2', res.body.sessionId);
+  }
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('sessionId');
+    expect(response.body).to.have.property('status');
+    expect(response.body.status).to.equal('active');
+    // New sessionId should differ from the completed one
+    expect(response.body.sessionId).to.not.equal(bru.getEnvVar('flowSessionId'));
+  }
+}
+
+docs {
+  Step 16: Start a new session after the previous one completed.
+
+  Verifies a new active session is created with a different sessionId.
+  The previous session was already 'completed', so it doesn't get abandoned again.
+
+  The new sessionId is stored as flowSessionId2 for the abandon test.
+}

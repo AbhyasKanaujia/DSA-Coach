@@ -1,0 +1,32 @@
+meta {
+  name: Deactivate Collection
+  type: http
+  seq: 4
+  tags: [
+    library
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/library/{{collectionId}}/deactivate
+  body: none
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  function onResponse(request, response) {
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.property('isActive');
+    expect(response.body.isActive).to.equal(false);
+  }
+}
+
+docs {
+  Deactivate a collection in the user's library.
+
+  Deactivated collections' problems won't appear in sessions.
+}
