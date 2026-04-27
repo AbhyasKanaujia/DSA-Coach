@@ -1,16 +1,14 @@
 /**
- * Idempotent seed for local development.
+ * Stable seed for local development.
  *
  *   node scripts/seed.js
  *
- * Creates:
- *   - admin user (admin@dsaflashcard.local / admin123)  — done by ensureAdminUser
+ * Wipes Problem / ProblemContent / Collection / UserCollection, then creates:
+ *   - admin user (admin@dsaflashcard.local / admin123) via ensureAdminUser
  *   - learner user (testuser@example.com / password123)
- *   - 8 problems (classic LeetCode set) + ProblemContent
- *   - 2 collections grouping them
- *   - learner subscribed + active on the "Top 8 Patterns" collection
- *
- * Safe to re-run: looks up by unique keys (email, source+sourceId, collection name).
+ *   - 2 collections: "Array Essentials" and "String Essentials"
+ *   - 3 problems per collection, covering easy / medium / hard, each with multiple solutions
+ *   - learner subscribed + active on "Array Essentials"
  */
 
 require('dotenv').config();
@@ -30,7 +28,7 @@ const LEARNER = {
   name: 'Test Learner'
 };
 
-const PROBLEMS = [
+const ARRAY_PROBLEMS = [
   {
     title: 'Two Sum',
     difficulty: 'easy',
@@ -39,7 +37,7 @@ const PROBLEMS = [
     source: 'leetcode',
     sourceId: '1',
     description:
-      'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.',
+      'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to target. Each input has exactly one solution and you may not use the same element twice.',
     solutions: [
       {
         name: 'Brute Force',
@@ -62,7 +60,7 @@ const PROBLEMS = [
       {
         name: 'Hash Map (one pass)',
         order: 2,
-        intuition: 'For each number, the value we need is target - num. A hash map gives O(1) lookup of "have I seen this complement already?"',
+        intuition: 'For each number, the value we need is target - num. A hash map gives O(1) lookup of the complement we have already seen.',
         steps: [
           'Create an empty map of value → index',
           'For each i, compute complement = target - nums[i]',
@@ -81,107 +79,184 @@ const PROBLEMS = [
     ]
   },
   {
-    title: 'Valid Anagram',
-    difficulty: 'easy',
-    tags: ['string', 'hash-table', 'sorting'],
-    companies: ['amazon', 'bloomberg'],
+    title: 'Maximum Subarray',
+    difficulty: 'medium',
+    tags: ['array', 'dynamic-programming', 'divide-and-conquer'],
+    companies: ['amazon', 'microsoft', 'bloomberg'],
     source: 'leetcode',
-    sourceId: '242',
+    sourceId: '53',
     description:
-      'Given two strings `s` and `t`, return true if t is an anagram of s, and false otherwise.',
+      'Given an integer array `nums`, find the contiguous subarray (containing at least one number) which has the largest sum and return its sum.',
     solutions: [
       {
-        name: 'Sort and Compare',
+        name: 'Brute Force',
         order: 1,
-        intuition: 'Anagrams have the same characters; sorting both yields the same string iff they are anagrams.',
-        steps: ['If lengths differ, return false', 'Sort both strings', 'Compare character by character'],
+        intuition: 'Try every starting index and extend to every ending index, tracking the maximum running sum.',
+        steps: [
+          'Initialize best = -Infinity',
+          'For each i, sum = 0; for each j ≥ i, sum += nums[j]; best = max(best, sum)',
+          'Return best'
+        ],
         codeSnippets: [
           {
             language: 'javascript',
-            code: 'function isAnagram(s, t) {\n  if (s.length !== t.length) return false;\n  return [...s].sort().join("") === [...t].sort().join("");\n}'
+            code: 'function maxSubArray(nums) {\n  let best = -Infinity;\n  for (let i = 0; i < nums.length; i++) {\n    let sum = 0;\n    for (let j = i; j < nums.length; j++) {\n      sum += nums[j];\n      if (sum > best) best = sum;\n    }\n  }\n  return best;\n}'
+          }
+        ],
+        timeComplexity: 'O(n^2)',
+        spaceComplexity: 'O(1)'
+      },
+      {
+        name: "Kadane's Algorithm",
+        order: 2,
+        intuition: 'At each index, the best subarray ending here is either nums[i] alone or nums[i] joined to the best ending at i-1. Carry that running max forward.',
+        steps: [
+          'cur = best = nums[0]',
+          'For i in 1..n-1: cur = max(nums[i], cur + nums[i]); best = max(best, cur)',
+          'Return best'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function maxSubArray(nums) {\n  let cur = nums[0], best = nums[0];\n  for (let i = 1; i < nums.length; i++) {\n    cur = Math.max(nums[i], cur + nums[i]);\n    best = Math.max(best, cur);\n  }\n  return best;\n}'
+          }
+        ],
+        timeComplexity: 'O(n)',
+        spaceComplexity: 'O(1)'
+      },
+      {
+        name: 'Divide and Conquer',
+        order: 3,
+        intuition: 'The best subarray is either entirely in the left half, entirely in the right half, or crosses the midpoint. Solve each recursively and combine.',
+        steps: [
+          'Recurse on left half and right half',
+          'Compute the best subarray that crosses the midpoint by extending left and right from mid',
+          'Return the max of the three'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function maxSubArray(nums) {\n  const solve = (l, r) => {\n    if (l === r) return nums[l];\n    const m = (l + r) >> 1;\n    const left = solve(l, m);\n    const right = solve(m + 1, r);\n    let lSum = -Infinity, s = 0;\n    for (let i = m; i >= l; i--) { s += nums[i]; lSum = Math.max(lSum, s); }\n    let rSum = -Infinity; s = 0;\n    for (let i = m + 1; i <= r; i++) { s += nums[i]; rSum = Math.max(rSum, s); }\n    return Math.max(left, right, lSum + rSum);\n  };\n  return solve(0, nums.length - 1);\n}'
           }
         ],
         timeComplexity: 'O(n log n)',
+        spaceComplexity: 'O(log n)'
+      }
+    ]
+  },
+  {
+    title: 'Trapping Rain Water',
+    difficulty: 'hard',
+    tags: ['array', 'two-pointers', 'dynamic-programming', 'stack'],
+    companies: ['amazon', 'google', 'meta'],
+    source: 'leetcode',
+    sourceId: '42',
+    description:
+      'Given `n` non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.',
+    solutions: [
+      {
+        name: 'Prefix Max + Suffix Max',
+        order: 1,
+        intuition: 'Water above index i is min(maxLeft[i], maxRight[i]) - height[i]. Precompute both arrays in two passes.',
+        steps: [
+          'Build leftMax[i] = max of height[0..i]',
+          'Build rightMax[i] = max of height[i..n-1]',
+          'Sum max(0, min(leftMax[i], rightMax[i]) - height[i]) over all i'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function trap(height) {\n  const n = height.length;\n  if (n === 0) return 0;\n  const left = new Array(n), right = new Array(n);\n  left[0] = height[0];\n  for (let i = 1; i < n; i++) left[i] = Math.max(left[i-1], height[i]);\n  right[n-1] = height[n-1];\n  for (let i = n-2; i >= 0; i--) right[i] = Math.max(right[i+1], height[i]);\n  let total = 0;\n  for (let i = 0; i < n; i++) total += Math.min(left[i], right[i]) - height[i];\n  return total;\n}'
+          }
+        ],
+        timeComplexity: 'O(n)',
+        spaceComplexity: 'O(n)'
+      },
+      {
+        name: 'Two Pointers',
+        order: 2,
+        intuition: 'Move two pointers inward; whichever side has the smaller running max bounds its own water level, so we can settle it without knowing the other side.',
+        steps: [
+          'l = 0, r = n-1, leftMax = rightMax = 0, total = 0',
+          'While l < r: if height[l] < height[r], update leftMax and add leftMax - height[l]; else mirror on the right',
+          'Return total'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function trap(height) {\n  let l = 0, r = height.length - 1;\n  let leftMax = 0, rightMax = 0, total = 0;\n  while (l < r) {\n    if (height[l] < height[r]) {\n      if (height[l] >= leftMax) leftMax = height[l];\n      else total += leftMax - height[l];\n      l++;\n    } else {\n      if (height[r] >= rightMax) rightMax = height[r];\n      else total += rightMax - height[r];\n      r--;\n    }\n  }\n  return total;\n}'
+          }
+        ],
+        timeComplexity: 'O(n)',
+        spaceComplexity: 'O(1)'
+      },
+      {
+        name: 'Monotonic Stack',
+        order: 3,
+        intuition: 'A descending stack of indices captures pending walls; when a taller bar arrives, it forms basins with the popped indices.',
+        steps: [
+          'Maintain a stack of indices with non-increasing height',
+          'When height[i] > height[stack.top], pop bottom; width = i - newTop - 1; bounded = min(height[newTop], height[i]) - height[popped]',
+          'Add bounded * width to total; push i'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function trap(height) {\n  const stack = [];\n  let total = 0;\n  for (let i = 0; i < height.length; i++) {\n    while (stack.length && height[i] > height[stack[stack.length-1]]) {\n      const bottom = stack.pop();\n      if (!stack.length) break;\n      const top = stack[stack.length-1];\n      const width = i - top - 1;\n      const bounded = Math.min(height[top], height[i]) - height[bottom];\n      total += width * bounded;\n    }\n    stack.push(i);\n  }\n  return total;\n}'
+          }
+        ],
+        timeComplexity: 'O(n)',
+        spaceComplexity: 'O(n)'
+      }
+    ]
+  }
+];
+
+const STRING_PROBLEMS = [
+  {
+    title: 'Valid Palindrome',
+    difficulty: 'easy',
+    tags: ['string', 'two-pointers'],
+    companies: ['meta', 'microsoft'],
+    source: 'leetcode',
+    sourceId: '125',
+    description:
+      'A phrase is a palindrome if, after converting to lowercase and removing non-alphanumeric characters, it reads the same forward and backward. Return true if `s` is a palindrome.',
+    solutions: [
+      {
+        name: 'Filter then Compare with Reverse',
+        order: 1,
+        intuition: 'Strip non-alphanumerics, lowercase, and compare the resulting string with its reverse.',
+        steps: [
+          'Build a filtered lowercase string',
+          'Compare it character-by-character to its reverse'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function isPalindrome(s) {\n  const t = s.toLowerCase().replace(/[^a-z0-9]/g, "");\n  return t === [...t].reverse().join("");\n}'
+          }
+        ],
+        timeComplexity: 'O(n)',
         spaceComplexity: 'O(n)'
       },
       {
-        name: 'Frequency Counter',
+        name: 'Two Pointers In Place',
         order: 2,
-        intuition: 'Two strings are anagrams iff they have identical character frequencies.',
+        intuition: 'Walk one pointer from each end, skipping non-alphanumerics, and compare the lowercased characters as we converge.',
         steps: [
-          'If lengths differ, return false',
-          'Build a 26-slot count array from s (+1) and t (-1)',
-          'If any slot is non-zero, return false'
+          'l = 0, r = n-1',
+          'While l < r: advance past non-alphanumerics on each side; compare lowercased chars; bail on mismatch',
+          'Return true if pointers crossed'
         ],
         codeSnippets: [
           {
             language: 'javascript',
-            code: 'function isAnagram(s, t) {\n  if (s.length !== t.length) return false;\n  const count = new Array(26).fill(0);\n  for (let i = 0; i < s.length; i++) {\n    count[s.charCodeAt(i) - 97]++;\n    count[t.charCodeAt(i) - 97]--;\n  }\n  return count.every(c => c === 0);\n}'
+            code: 'function isPalindrome(s) {\n  const ok = c => /[a-z0-9]/i.test(c);\n  let l = 0, r = s.length - 1;\n  while (l < r) {\n    while (l < r && !ok(s[l])) l++;\n    while (l < r && !ok(s[r])) r--;\n    if (s[l].toLowerCase() !== s[r].toLowerCase()) return false;\n    l++; r--;\n  }\n  return true;\n}'
           }
         ],
         timeComplexity: 'O(n)',
         spaceComplexity: 'O(1)'
-      }
-    ]
-  },
-  {
-    title: 'Best Time to Buy and Sell Stock',
-    difficulty: 'easy',
-    tags: ['array', 'dynamic-programming', 'sliding-window'],
-    companies: ['amazon', 'meta', 'apple'],
-    source: 'leetcode',
-    sourceId: '121',
-    description:
-      'You are given an array `prices` where prices[i] is the price of a given stock on day i. Maximize your profit by choosing a single day to buy and a different day in the future to sell. Return the max profit, or 0 if none.',
-    solutions: [
-      {
-        name: 'One Pass — Track Min',
-        order: 1,
-        intuition: 'On each day, the best profit if we sell today is price[today] - min_so_far. Track min and the rolling max profit.',
-        steps: [
-          'Initialize min = +Infinity, profit = 0',
-          'For each price: min = min(min, price); profit = max(profit, price - min)',
-          'Return profit'
-        ],
-        codeSnippets: [
-          {
-            language: 'javascript',
-            code: 'function maxProfit(prices) {\n  let min = Infinity, profit = 0;\n  for (const p of prices) {\n    if (p < min) min = p;\n    else if (p - min > profit) profit = p - min;\n  }\n  return profit;\n}'
-          }
-        ],
-        timeComplexity: 'O(n)',
-        spaceComplexity: 'O(1)'
-      }
-    ]
-  },
-  {
-    title: 'Valid Parentheses',
-    difficulty: 'easy',
-    tags: ['string', 'stack'],
-    companies: ['google', 'microsoft'],
-    source: 'leetcode',
-    sourceId: '20',
-    description:
-      'Given a string `s` containing just the characters \'(\', \')\', \'{\', \'}\', \'[\' and \']\', determine if the input string is valid. Brackets must close in the correct order.',
-    solutions: [
-      {
-        name: 'Stack',
-        order: 1,
-        intuition: 'Every closing bracket must match the most recently opened bracket — that is exactly LIFO, so use a stack.',
-        steps: [
-          'Map close → open',
-          'Iterate chars; push opens onto stack',
-          'On close, pop stack and check it matches; otherwise return false',
-          'At end, stack must be empty'
-        ],
-        codeSnippets: [
-          {
-            language: 'javascript',
-            code: 'function isValid(s) {\n  const pair = { ")": "(", "]": "[", "}": "{" };\n  const stack = [];\n  for (const c of s) {\n    if (c in pair) {\n      if (stack.pop() !== pair[c]) return false;\n    } else {\n      stack.push(c);\n    }\n  }\n  return stack.length === 0;\n}'
-          }
-        ],
-        timeComplexity: 'O(n)',
-        spaceComplexity: 'O(n)'
       }
     ]
   },
@@ -196,13 +271,30 @@ const PROBLEMS = [
       'Given a string `s`, find the length of the longest substring without repeating characters.',
     solutions: [
       {
-        name: 'Sliding Window with Set',
+        name: 'Brute Force',
         order: 1,
-        intuition: 'Maintain a window of unique characters; when a duplicate enters, shrink the left edge until the duplicate is gone.',
+        intuition: 'Try every substring; check uniqueness with a set; track the longest valid length.',
+        steps: [
+          'For each start i, expand j until a duplicate appears',
+          'Track best length seen across all (i, j)'
+        ],
+        codeSnippets: [
+          {
+            language: 'javascript',
+            code: 'function lengthOfLongestSubstring(s) {\n  let best = 0;\n  for (let i = 0; i < s.length; i++) {\n    const seen = new Set();\n    for (let j = i; j < s.length; j++) {\n      if (seen.has(s[j])) break;\n      seen.add(s[j]);\n    }\n    best = Math.max(best, seen.size);\n  }\n  return best;\n}'
+          }
+        ],
+        timeComplexity: 'O(n^2)',
+        spaceComplexity: 'O(min(n, alphabet))'
+      },
+      {
+        name: 'Sliding Window with Set',
+        order: 2,
+        intuition: 'Maintain a window of unique characters; when a duplicate arrives, shrink the left edge until the duplicate is removed.',
         steps: [
           'left = 0, set = {}',
           'For right in [0..n): while s[right] in set, remove s[left] and left++',
-          'Add s[right] to set; update best = max(best, right - left + 1)'
+          'Add s[right]; update best = max(best, right - left + 1)'
         ],
         codeSnippets: [
           {
@@ -215,8 +307,8 @@ const PROBLEMS = [
       },
       {
         name: 'Sliding Window with Last-Seen Map',
-        order: 2,
-        intuition: 'Skip the inner while-loop by jumping `left` directly past the previous occurrence of the duplicate.',
+        order: 3,
+        intuition: 'Skip the inner loop by jumping `left` directly past the previous occurrence of the duplicate character.',
         steps: [
           'last = {}, left = 0',
           'For each right: if s[right] in last and last[s[right]] >= left, left = last[s[right]] + 1',
@@ -234,110 +326,50 @@ const PROBLEMS = [
     ]
   },
   {
-    title: 'Group Anagrams',
-    difficulty: 'medium',
-    tags: ['array', 'string', 'hash-table'],
-    companies: ['amazon', 'uber'],
+    title: 'Minimum Window Substring',
+    difficulty: 'hard',
+    tags: ['string', 'hash-table', 'sliding-window'],
+    companies: ['amazon', 'meta', 'linkedin'],
     source: 'leetcode',
-    sourceId: '49',
+    sourceId: '76',
     description:
-      'Given an array of strings `strs`, group the anagrams together. You can return the answer in any order.',
+      'Given strings `s` and `t`, return the minimum window substring of `s` that contains every character of `t` (including duplicates). If no such substring exists, return the empty string.',
     solutions: [
       {
-        name: 'Sort Each Word as Key',
+        name: 'Sliding Window with Need/Have Counters',
         order: 1,
-        intuition: 'Anagrams share the same sorted form — use that as a hash key.',
+        intuition: 'Expand right until the window covers all chars of t (have == need); then contract left to find the smallest such window before resuming.',
         steps: [
-          'For each word, key = sorted(word)',
-          'Append the original word to map[key]',
-          'Return Object.values(map)'
+          'Build need = char counts of t; required = unique chars in t',
+          'Expand right; when a char\'s window count matches its need, formed++',
+          'While formed === required: record window if smaller; shrink left, decrementing counts and possibly formed--'
         ],
         codeSnippets: [
           {
             language: 'javascript',
-            code: 'function groupAnagrams(strs) {\n  const map = new Map();\n  for (const s of strs) {\n    const key = [...s].sort().join("");\n    if (!map.has(key)) map.set(key, []);\n    map.get(key).push(s);\n  }\n  return [...map.values()];\n}'
+            code: 'function minWindow(s, t) {\n  if (!s || !t || t.length > s.length) return "";\n  const need = new Map();\n  for (const c of t) need.set(c, (need.get(c) || 0) + 1);\n  const required = need.size;\n  const have = new Map();\n  let formed = 0, l = 0;\n  let best = [Infinity, 0, 0];\n  for (let r = 0; r < s.length; r++) {\n    const c = s[r];\n    have.set(c, (have.get(c) || 0) + 1);\n    if (need.has(c) && have.get(c) === need.get(c)) formed++;\n    while (formed === required) {\n      if (r - l + 1 < best[0]) best = [r - l + 1, l, r];\n      const lc = s[l];\n      have.set(lc, have.get(lc) - 1);\n      if (need.has(lc) && have.get(lc) < need.get(lc)) formed--;\n      l++;\n    }\n  }\n  return best[0] === Infinity ? "" : s.slice(best[1], best[2] + 1);\n}'
           }
         ],
-        timeComplexity: 'O(n * k log k)',
-        spaceComplexity: 'O(n * k)'
+        timeComplexity: 'O(|s| + |t|)',
+        spaceComplexity: 'O(|s| + |t|)'
       },
       {
-        name: 'Frequency Tuple as Key',
+        name: 'Filtered Sliding Window',
         order: 2,
-        intuition: 'Avoid the per-word sort by using a 26-length count tuple as the key.',
+        intuition: 'When |t| ≪ |s| and most of s is irrelevant, scan only the indices in s whose char appears in t — same algorithm, fewer steps.',
         steps: [
-          'For each word, build a 26-int count array',
-          'Stringify it as the key',
-          'Group as before'
+          'Build need from t',
+          'Build a filtered list of [index, char] pairs from s where char is in need',
+          'Run the sliding window over the filtered list, mapping back to original indices for window length'
         ],
         codeSnippets: [
           {
             language: 'javascript',
-            code: 'function groupAnagrams(strs) {\n  const map = new Map();\n  for (const s of strs) {\n    const count = new Array(26).fill(0);\n    for (const c of s) count[c.charCodeAt(0) - 97]++;\n    const key = count.join(",");\n    if (!map.has(key)) map.set(key, []);\n    map.get(key).push(s);\n  }\n  return [...map.values()];\n}'
+            code: 'function minWindow(s, t) {\n  if (!s || !t || t.length > s.length) return "";\n  const need = new Map();\n  for (const c of t) need.set(c, (need.get(c) || 0) + 1);\n  const filtered = [];\n  for (let i = 0; i < s.length; i++) if (need.has(s[i])) filtered.push([i, s[i]]);\n  const required = need.size;\n  const have = new Map();\n  let formed = 0, l = 0;\n  let best = [Infinity, 0, 0];\n  for (let r = 0; r < filtered.length; r++) {\n    const c = filtered[r][1];\n    have.set(c, (have.get(c) || 0) + 1);\n    if (have.get(c) === need.get(c)) formed++;\n    while (formed === required) {\n      const start = filtered[l][0], end = filtered[r][0];\n      if (end - start + 1 < best[0]) best = [end - start + 1, start, end];\n      const lc = filtered[l][1];\n      have.set(lc, have.get(lc) - 1);\n      if (have.get(lc) < need.get(lc)) formed--;\n      l++;\n    }\n  }\n  return best[0] === Infinity ? "" : s.slice(best[1], best[2] + 1);\n}'
           }
         ],
-        timeComplexity: 'O(n * k)',
-        spaceComplexity: 'O(n * k)'
-      }
-    ]
-  },
-  {
-    title: 'Number of Islands',
-    difficulty: 'medium',
-    tags: ['graph', 'dfs', 'bfs', 'matrix'],
-    companies: ['amazon', 'meta', 'google'],
-    source: 'leetcode',
-    sourceId: '200',
-    description:
-      'Given an `m x n` 2D binary grid which represents a map of \'1\'s (land) and \'0\'s (water), return the number of islands. An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically.',
-    solutions: [
-      {
-        name: 'DFS Flood Fill',
-        order: 1,
-        intuition: 'Each unvisited land cell starts a new island; flood-fill all connected land cells so we don\'t recount.',
-        steps: [
-          'For each cell (r, c): if it is land, increment count and DFS to mark connected land as visited (e.g., flip to "0")',
-          'DFS visits 4 neighbors recursively',
-          'Return count'
-        ],
-        codeSnippets: [
-          {
-            language: 'javascript',
-            code: 'function numIslands(grid) {\n  const rows = grid.length, cols = grid[0].length;\n  let count = 0;\n  const dfs = (r, c) => {\n    if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== "1") return;\n    grid[r][c] = "0";\n    dfs(r+1,c); dfs(r-1,c); dfs(r,c+1); dfs(r,c-1);\n  };\n  for (let r = 0; r < rows; r++)\n    for (let c = 0; c < cols; c++)\n      if (grid[r][c] === "1") { count++; dfs(r,c); }\n  return count;\n}'
-          }
-        ],
-        timeComplexity: 'O(m * n)',
-        spaceComplexity: 'O(m * n) recursion'
-      }
-    ]
-  },
-  {
-    title: 'Merge Intervals',
-    difficulty: 'medium',
-    tags: ['array', 'sorting'],
-    companies: ['amazon', 'meta', 'google'],
-    source: 'leetcode',
-    sourceId: '56',
-    description:
-      'Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.',
-    solutions: [
-      {
-        name: 'Sort then Sweep',
-        order: 1,
-        intuition: 'After sorting by start, an interval either extends the previous one (overlap) or starts a new run.',
-        steps: [
-          'Sort intervals by start',
-          'Iterate; if current.start <= last.end, last.end = max(last.end, current.end)',
-          'Otherwise push current as a new interval'
-        ],
-        codeSnippets: [
-          {
-            language: 'javascript',
-            code: 'function merge(intervals) {\n  intervals.sort((a, b) => a[0] - b[0]);\n  const out = [];\n  for (const [s, e] of intervals) {\n    if (out.length && s <= out[out.length-1][1]) {\n      out[out.length-1][1] = Math.max(out[out.length-1][1], e);\n    } else {\n      out.push([s, e]);\n    }\n  }\n  return out;\n}'
-          }
-        ],
-        timeComplexity: 'O(n log n)',
-        spaceComplexity: 'O(n)'
+        timeComplexity: 'O(|s| + |t|)',
+        spaceComplexity: 'O(|s| + |t|)'
       }
     ]
   }
@@ -345,14 +377,14 @@ const PROBLEMS = [
 
 const COLLECTIONS = [
   {
-    name: 'Top 8 Patterns',
-    description: 'A starter set covering hash maps, sliding window, stack, DFS, and sorting — enough for one full review session.',
-    sourceIds: ['1', '242', '121', '20', '3', '49', '200', '56']
+    name: 'Array Essentials',
+    description: 'Three array problems spanning easy, medium, and hard — Two Sum, Maximum Subarray, Trapping Rain Water.',
+    problems: ARRAY_PROBLEMS
   },
   {
-    name: 'Easy Warm-Up',
-    description: 'Four easy problems to reset your confidence before harder sessions.',
-    sourceIds: ['1', '242', '121', '20']
+    name: 'String Essentials',
+    description: 'Three string problems spanning easy, medium, and hard — Valid Palindrome, Longest Substring Without Repeating Characters, Minimum Window Substring.',
+    problems: STRING_PROBLEMS
   }
 ];
 
@@ -370,11 +402,17 @@ async function ensureLearner() {
   return user;
 }
 
-async function ensureProblem(spec, adminId) {
-  const existing = await Problem.findOne({ source: spec.source, sourceId: spec.sourceId });
-  if (existing) {
-    return { problem: existing, created: false };
-  }
+async function wipe() {
+  const [c, p, pc, uc] = await Promise.all([
+    Collection.deleteMany({}),
+    Problem.deleteMany({}),
+    ProblemContent.deleteMany({}),
+    UserCollection.deleteMany({})
+  ]);
+  console.log(`Wiped: ${c.deletedCount} collections, ${p.deletedCount} problems, ${pc.deletedCount} contents, ${uc.deletedCount} subscriptions`);
+}
+
+async function createProblem(spec, adminId) {
   const problem = await Problem.create({
     title: spec.title,
     description: spec.description,
@@ -389,41 +427,7 @@ async function ensureProblem(spec, adminId) {
     problemId: problem._id,
     solutions: spec.solutions
   });
-  return { problem, created: true };
-}
-
-async function ensureCollection(spec, sourceIdToProblemId, adminId) {
-  const problemIds = spec.sourceIds
-    .map(sid => sourceIdToProblemId.get(sid))
-    .filter(Boolean);
-  const existing = await Collection.findOne({ name: spec.name });
-  if (existing) {
-    existing.description = spec.description;
-    existing.problemIds = problemIds;
-    await existing.save();
-    return { collection: existing, created: false };
-  }
-  const collection = await Collection.create({
-    name: spec.name,
-    description: spec.description,
-    problemIds,
-    createdBy: adminId,
-    isPublic: true
-  });
-  return { collection, created: true };
-}
-
-async function ensureSubscription(userId, collectionId) {
-  const existing = await UserCollection.findOne({ userId, collectionId });
-  if (existing) {
-    if (!existing.isActive) {
-      existing.isActive = true;
-      await existing.save();
-    }
-    return { sub: existing, created: false };
-  }
-  const sub = await UserCollection.create({ userId, collectionId, isActive: true });
-  return { sub, created: true };
+  return problem;
 }
 
 async function main() {
@@ -431,29 +435,37 @@ async function main() {
   const admin = await ensureAdminUser();
   const learner = await ensureLearner();
 
-  const sourceIdToProblemId = new Map();
-  let createdProblems = 0;
-  for (const spec of PROBLEMS) {
-    const { problem, created } = await ensureProblem(spec, admin._id);
-    sourceIdToProblemId.set(spec.sourceId, problem._id);
-    if (created) createdProblems++;
+  await wipe();
+
+  const created = [];
+  for (const cspec of COLLECTIONS) {
+    const problemIds = [];
+    for (const pspec of cspec.problems) {
+      const p = await createProblem(pspec, admin._id);
+      problemIds.push(p._id);
+    }
+    const collection = await Collection.create({
+      name: cspec.name,
+      description: cspec.description,
+      problemIds,
+      createdBy: admin._id,
+      isPublic: true
+    });
+    created.push(collection);
+    console.log(`Created "${cspec.name}" with ${problemIds.length} problems`);
   }
 
-  let createdCollections = 0;
-  let firstCollectionId = null;
-  for (const spec of COLLECTIONS) {
-    const { collection, created } = await ensureCollection(spec, sourceIdToProblemId, admin._id);
-    if (!firstCollectionId) firstCollectionId = collection._id;
-    if (created) createdCollections++;
-  }
-
-  const { created: subCreated } = await ensureSubscription(learner._id, firstCollectionId);
+  await UserCollection.create({
+    userId: learner._id,
+    collectionId: created[0]._id,
+    isActive: true
+  });
 
   console.log('\nSeed summary:');
-  console.log(`  problems:    ${PROBLEMS.length} total, ${createdProblems} newly created`);
-  console.log(`  collections: ${COLLECTIONS.length} total, ${createdCollections} newly created`);
-  console.log(`  learner:     ${LEARNER.email} / ${LEARNER.password}  (${subCreated ? 'subscribed' : 'already subscribed'} to "${COLLECTIONS[0].name}")`);
-  console.log(`  admin:       ${admin.email} (use existing password)`);
+  console.log(`  collections: ${created.length}`);
+  console.log(`  problems:    ${COLLECTIONS.reduce((n, c) => n + c.problems.length, 0)}`);
+  console.log(`  learner:     ${LEARNER.email} / ${LEARNER.password} (subscribed to "${created[0].name}")`);
+  console.log(`  admin:       ${admin.email}`);
 }
 
 main()
