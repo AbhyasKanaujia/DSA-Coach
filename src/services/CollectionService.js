@@ -27,7 +27,9 @@ class CollectionService {
   }
 
   async listCollections(pagination = {}) {
-    return await collectionRepository.findPublic(pagination);
+    const items = await collectionRepository.findPublic(pagination);
+    const total = await collectionRepository.count({ isPublic: true });
+    return { items, total };
   }
 
   async updateCollection(collectionId, updates) {

@@ -32,6 +32,7 @@ app.use(cors({
     }
   },
   credentials: true,
+  exposedHeaders: ['X-Total-Count'],
 }));
 
 app.use(express.json());

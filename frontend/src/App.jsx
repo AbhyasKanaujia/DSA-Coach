@@ -4,6 +4,9 @@ import AppLayout from './components/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Collections from './pages/Collections';
+import CollectionDetail from './pages/CollectionDetail';
+import Library from './pages/Library';
 import Placeholder from './pages/Placeholder';
 
 export default function App() {
@@ -19,8 +22,9 @@ export default function App() {
         }
       >
         <Route path="/" element={<Placeholder title="Dashboard (Phase 4)" />} />
-        <Route path="/library" element={<Placeholder title="Library (Phase 2)" />} />
-        <Route path="/collections" element={<Placeholder title="Browse Collections (Phase 2)" />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/collections" element={<Collections />} />
+        <Route path="/collections/:id" element={<CollectionDetail />} />
         <Route path="/session" element={<Placeholder title="Review Session (Phase 3)" />} />
         <Route path="/profile" element={<Profile />} />
       </Route>

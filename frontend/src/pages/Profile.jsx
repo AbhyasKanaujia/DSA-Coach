@@ -3,8 +3,10 @@ import FormField, { inputClass } from '../components/FormField';
 import { AdminBadge } from '../components/Badge';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/errors';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Profile() {
+  useDocumentTitle('Profile');
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState('');
   const [dailyGoal, setDailyGoal] = useState('');

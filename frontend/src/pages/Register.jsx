@@ -4,8 +4,10 @@ import AuthLayout from '../components/AuthLayout';
 import FormField, { inputClass } from '../components/FormField';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/errors';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Register() {
+  useDocumentTitle('Create account');
   const { token, register } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');

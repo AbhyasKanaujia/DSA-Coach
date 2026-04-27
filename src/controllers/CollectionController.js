@@ -33,8 +33,9 @@ class CollectionController {
         page: parseInt(req.query.page, 10) || 1,
         limit: parseInt(req.query.limit, 10) || 20
       };
-      const collections = await collectionService.listCollections(pagination);
-      res.json(collections);
+      const { items, total } = await collectionService.listCollections(pagination);
+      res.set('X-Total-Count', String(total));
+      res.json(items);
     } catch (error) {
       next(error);
     }

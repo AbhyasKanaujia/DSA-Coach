@@ -9,7 +9,6 @@ module.exports = {
         '^@/(.*)$': '<rootDir>/src/$1',
       },
     },
-    '<rootDir>/frontend/jest.config.cjs',
   ],
   coverageDirectory: 'coverage',
 };

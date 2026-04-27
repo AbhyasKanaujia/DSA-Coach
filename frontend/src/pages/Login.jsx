@@ -4,8 +4,10 @@ import AuthLayout from '../components/AuthLayout';
 import FormField, { inputClass } from '../components/FormField';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/errors';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Login() {
+  useDocumentTitle('Sign in');
   const { token, login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
