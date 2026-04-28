@@ -3,25 +3,25 @@ const { ValidationError } = require('../../../src/utils/validators');
 
 describe('SessionValidator', () => {
   describe('validateStartSession', () => {
-    it('should return defaults when no options provided', () => {
+    it('should return undefined when no options provided so service can apply user preference', () => {
       const result = sessionValidator.validateStartSession();
-      expect(result).toEqual({ limit: 10, maxNew: 3 });
+      expect(result).toEqual({ limit: undefined, maxNew: undefined });
     });
 
-    it('should return defaults when empty object provided', () => {
+    it('should return undefined when empty object provided so service can apply user preference', () => {
       const result = sessionValidator.validateStartSession({});
-      expect(result).toEqual({ limit: 10, maxNew: 3 });
+      expect(result).toEqual({ limit: undefined, maxNew: undefined });
     });
 
     it('should accept valid limit', () => {
       const result = sessionValidator.validateStartSession({ limit: 5 });
       expect(result.limit).toBe(5);
-      expect(result.maxNew).toBe(3);
+      expect(result.maxNew).toBeUndefined();
     });
 
     it('should accept valid maxNew', () => {
       const result = sessionValidator.validateStartSession({ maxNew: 10 });
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBeUndefined();
       expect(result.maxNew).toBe(10);
     });
 

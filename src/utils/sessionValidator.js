@@ -21,8 +21,8 @@ class SessionValidator {
     }
 
     return {
-      limit: limit !== undefined ? parseInt(limit, 10) : SR.DEFAULT_SESSION_SIZE,
-      maxNew: maxNew !== undefined ? parseInt(maxNew, 10) : SR.DEFAULT_MAX_NEW
+      limit: limit !== undefined ? parseInt(limit, 10) : undefined,
+      maxNew: maxNew !== undefined ? parseInt(maxNew, 10) : undefined
     };
   }
 

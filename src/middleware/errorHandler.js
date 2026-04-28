@@ -1,10 +1,6 @@
 const errorHandler = (err, req, res, next) => {
   console.error(err.stack);
 
-  if (err.statusCode === 409) {
-    return res.status(409).json({ error: 'Duplicate entry' });
-  }
-
   if (err.statusCode) {
     const response = { error: err.message };
     if (err.field) {

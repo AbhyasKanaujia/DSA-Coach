@@ -323,6 +323,28 @@ describe('Reviews API Integration Tests', () => {
       expect(session.status).toBe('completed');
     });
 
+    it('should return 409 when reviewing in an abandoned session (cross-tab)', async () => {
+      // Tab B starts a new session, which abandons Tab A's session
+      await request(app)
+        .post('/api/sessions/start')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      const response = await request(app)
+        .post('/api/reviews')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          problemId: problemId.toString(),
+          quality: 'easy',
+          sessionId: sessionId
+        });
+
+      expect(response.status).toBe(409);
+
+      const oldSession = await Session.findById(sessionId);
+      expect(oldSession.status).toBe('abandoned');
+    });
+
     it('should return 409 when reviewing in a completed session', async () => {
       await request(app)
         .post('/api/reviews')

@@ -15,3 +15,17 @@
 ### General
 
 1. Pagination and filters must update URL query params to allow sharing and bookmarking.
+
+### Session
+
+Sesssion must be able to be fully operated by keybowrd. Not just for accessibility, but as the main interaction mode for the flashcard workflow. This includes:
+- Space bar to reveal the next step
+- 1,2,3... to select a solution
+- A, H, E for "Again", "Hard", "Easy" grading buttons
+- Esc to exit session and return to library
+
+#### Known Bugs
+
+1. **Solution switching resets reveal state (T23).** Switching between approaches mid-reveal resets the reveal counter to 1/5 and hides all previously revealed content. The user must re-reveal through all 5 steps for the new solution. Expected: either preserve reveal position per solution, or document this as intended UX.
+
+2. **Multiple active sessions not abandoned (T16).** When a user starts a new session (e.g., by opening /session in a second tab or refreshing), the backend creates a new session without abandoning the previous active one. API queries show multiple active sessions for the same user. Expected: `POST /sessions/start` should abandon any existing active session before creating a new one, and subsequent rating attempts on the abandoned session should return "Session is not active".

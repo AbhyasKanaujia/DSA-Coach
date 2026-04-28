@@ -58,7 +58,7 @@ describe('Auth API Integration Tests', () => {
         });
 
       expect(response.status).toBe(409);
-      expect(response.body.error).toBe('Duplicate entry');
+      expect(response.body.error).toBe('Email already registered');
     });
   });
 

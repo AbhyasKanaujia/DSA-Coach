@@ -17,8 +17,9 @@ class SessionService {
     }
 
     const user = await userRepository.findById(userId);
-    const effectiveLimit = options.limit || (user && user.preferences ? user.preferences.maxSessionSize : null) || SR.DEFAULT_SESSION_SIZE;
-    const effectiveMaxNew = options.maxNew || SR.DEFAULT_MAX_NEW;
+    const userPreferredLimit = user && user.preferences ? user.preferences.maxSessionSize : undefined;
+    const effectiveLimit = options.limit ?? userPreferredLimit ?? SR.DEFAULT_SESSION_SIZE;
+    const effectiveMaxNew = options.maxNew ?? SR.DEFAULT_MAX_NEW;
 
     const activeUserCollections = await userCollectionRepository.findActiveByUser(userId);
     if (!activeUserCollections || activeUserCollections.length === 0) {
